@@ -1,0 +1,144 @@
+import { reactive, toRaw } from 'vue'
+
+export const store = reactive({
+  types: [],           // available coverage types
+  modules: {},         // coverage data aggregated by module
+  coverage_totals: {}, // totals for coverage
+  metadata: {}         // other data
+})
+
+export function getCoverage(module, file) {
+  if (module && file) {
+    const coverage_data = toRaw(store.modules)[module].files[file].coverage;
+    const coverage = {};
+    for (const type of Object.keys(coverage_data)) {
+        coverage[type] = { hits: Object.values(coverage_data[type].lines).filter(x => x > 0).length, total: Object.keys(coverage_data[type].lines).length };
+    }
+    return coverage;
+  } else if (module) {
+    return toRaw(store.modules[module].coverage);
+  } else {
+    return toRaw(store.coverage_totals);
+  }
+}
+
+import { parseInfo } from "./parse.js";
+
+export function loadData(inputFiles) {
+  let config = {};
+  try {
+    const configFile = inputFiles['config.json'];
+    if (!configFile) {
+      throw new Error('The archive does not have a config.json file, no data will be loaded.');
+    }
+    config = JSON.parse(configFile);
+    if (!(config?.datasets) || Object.keys(config.datasets).length < 1) {
+      throw new Error('The config is malformed, does not contain a "datasets" field with at least one dataset.');
+    }
+  }
+  catch (e) {
+    store.types = [];
+    store.modules = {};
+    store.coverage_totals = {};
+    console.error(e);
+    return;
+  }
+
+  const sources = {};
+  const sourcesFile = inputFiles['sources.txt'];
+  if (sourcesFile) {
+    const split = sourcesFile.split('### FILE: ');
+    if (split.length > 1) {
+        for (let i = 1; i < split.length; i++) {
+            const nameContent = split[i].split('\n');
+            const name = nameContent.shift();
+            const content = nameContent.join('\n')
+            sources[name] = content;
+        }
+    }
+  }
+
+  // for now we only handle 1 set of info files
+  const layout = config.datasets[Object.keys(config.datasets)[0]];
+  const types = Object.keys(layout);
+
+  delete config.datasets;
+  const metadata = config;
+  console.log(metadata);
+
+  const coverage = {};
+  for (let [k, v] of Object.entries(layout)) {
+    coverage[k] = parseInfo(inputFiles[v]);
+  }
+
+  const filenames = Array.from(
+    new Set(...(types).map(t => Object.keys(coverage[t]))),
+  );
+
+  const files = {};
+  for (const t of Object.keys(coverage)) {
+    for (const f of Object.keys(coverage[t])) {
+      if (!(f in files)) files[f] = {coverage: {}};
+      files[f].coverage[t] = { lines: coverage[t][f].lines };
+      if (f in sources) {
+        files[f].source = sources[f];
+      }
+    }
+  }
+
+  const modules = Object.fromEntries(
+    Array.from(
+      new Set(filenames.map((n) => n.split("/").slice(0, -1).join("/"))),
+    ).map((name) => [
+      name,
+      {
+        files: Object.fromEntries(
+          Object.entries(files)
+            .filter(([k,v]) => k.startsWith(name))
+            .map(([k,v]) => [k.split("/").at(-1), { ...v, contents: null }]),
+        ),
+        coverage: {}
+      },
+    ]),
+  );
+  console.log(JSON.stringify(modules));
+
+  let coverage_totals = {};
+
+  // count coverages for modules; for files it's trivial to count on the fly, total is also trivial once you have modules
+  for (const type of types) {
+    coverage_totals[type] = { hits: 0, total: 0 };
+    for (const [name, m] of Object.entries(modules)) {
+      let hits = 0;
+      let total = 0;
+      for (const file of Object.values(m.files)) {
+        const cov = file.coverage[type];
+        if (cov && cov.lines) {
+          hits += Object.values(cov.lines).filter(x => x > 0).length;
+          total += Object.keys(cov.lines).length;
+        }
+      }
+
+      modules[name].coverage[type] = { hits: hits, total: total }
+      coverage_totals[type].hits += hits;
+      coverage_totals[type].total += total;
+    }
+  }
+
+  store.types = types;
+  store.modules = modules;
+  store.coverage_totals = coverage_totals;
+  store.metadata = metadata;
+}
+
+export function getRateColor(rate, muted=false) {
+  if (rate == 'N/A') return muted ? "#262626" : "#737373"; // neutral
+  if (rate >= 80) return muted ? "#166534" : "#22c55e"; // green
+  if (rate >= 60) return muted ? "#854d0e" : "#eab308"; // yellow
+  if (rate >= 1) return muted ? "#9a3412" : "#f97316"; // orange
+  return muted ? "#991b1b" : "#ef4444"; // red
+}
+
+export function getRate(hitsAndTotals) {
+  return (hitsAndTotals && hitsAndTotals.total > 0) ? parseFloat(((hitsAndTotals.hits/hitsAndTotals.total) * 100).toFixed(1)) : 'N/A';
+}
