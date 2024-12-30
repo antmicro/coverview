@@ -11,7 +11,7 @@ let lineCount = 0;
 if (source) {
   lineCount = source.length;
 } else {
-  lineCount = Math.max(...(Object.values(file.coverage).map(x => Object.keys(x.lines || []).toSorted().at(-1))));
+  lineCount = Math.max(...(Object.values(file.coverage).map(x => Object.keys(x.lines || []).toSorted().at(-1) || 0)));
 }
 
 function getColor(coverageData) {
@@ -39,7 +39,8 @@ const lines = Array.from(
 
 <template>
   <main>
-    <table>
+    <div v-if="lines.length == 0">NO COVERAGE DATA FOR THIS FILE</div>
+    <table v-if="lines.length != 0">
       <thead><tr><th></th><th v-for="name in store.types">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
       <tbody>
         <tr v-for="line in lines" :key="line.n">
