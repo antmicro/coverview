@@ -9,10 +9,10 @@ export const store = reactive({
 
 export function getCoverage(module, file) {
   if (module && file) {
-    const coverage_data = toRaw(store.modules)[module].files[file].coverage;
+    const fileObject = toRaw(store.modules)[module].files[file];
     const coverage = {};
-    for (const type of Object.keys(coverage_data)) {
-        coverage[type] = { hits: Object.values(coverage_data[type].lines).filter(x => x > 0).length, total: Object.keys(coverage_data[type].lines).length };
+    for (const type of store.types) {
+        coverage[type] = countFileCoverage(fileObject, type);
     }
     return coverage;
   } else if (module) {
@@ -23,6 +23,28 @@ export function getCoverage(module, file) {
 }
 
 import { parseInfo } from "./parse.js";
+
+function countFileCoverage(file, type) {
+  let hits = 0;
+  let total = 0;
+  const cov = file.coverage[type];
+  if (cov && cov.lines) {
+    for (const line of Object.values(cov.lines)) {
+      if (line.groups) {
+        // if there are groups in this line, count fields and the values
+        for (const g of line.groups) {
+          hits += line.groups[g].filter(x.value > 0).length;
+          total += line.groups[g].length;
+        }
+      } else {
+        if (line.value > 0) hits += 1;
+        total += 1;
+      }
+    }
+  }
+  return {hits: hits, total: total};
+}
+
 
 export function loadData(inputFiles) {
   let config = {};
@@ -94,7 +116,7 @@ export function loadData(inputFiles) {
       {
         files: Object.fromEntries(
           Object.entries(files)
-            .filter(([k,v]) => k.startsWith(name))
+            .filter(([k,_]) => k.startsWith(name))
             .map(([k,v]) => [k.split("/").at(-1), { ...v, contents: null }]),
         ),
         coverage: {}
@@ -112,11 +134,9 @@ export function loadData(inputFiles) {
       let hits = 0;
       let total = 0;
       for (const file of Object.values(m.files)) {
-        const cov = file.coverage[type];
-        if (cov && cov.lines) {
-          hits += Object.values(cov.lines).filter(x => x > 0).length;
-          total += Object.keys(cov.lines).length;
-        }
+        const fileResults = countFileCoverage(file, type);
+        hits += fileResults.hits;
+        total += fileResults.total;
       }
 
       modules[name].coverage[type] = { hits: hits, total: total }

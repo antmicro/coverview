@@ -14,7 +14,7 @@ if (source) {
 const lines = Array.from(
   Array(lineCount).keys()
     .map(i => {
-      const coverageData = file.coverage.line?.lines[i+1];
+      const coverageData = file.coverage.line?.lines[i+1]?.value;
       const lineData = { n: i+1, coverageData, color: coverageData > 0 ? "green" : (coverageData === 0 ? "red" : "") };
       if (source) lineData.source = source[i+1];
       return lineData;
