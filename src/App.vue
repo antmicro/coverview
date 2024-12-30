@@ -9,6 +9,11 @@ import Info from "./components/Info.vue";
 if (Object.keys(store.modules).length === 0) {
   if (Object.keys(store.files).length !== 0) {
     loadData(store.files);
+  } else {
+    if (Object.keys(files).length !== 0) {
+      store.files = files;
+      loadData(files);
+    }
   }
 }
 
