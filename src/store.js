@@ -112,7 +112,7 @@ export function loadData(inputFiles) {
   }
 
   const filenames = Array.from(
-    new Set(...(types).map(t => Object.keys(coverage[t]))),
+    new Set(types.flatMap(t => Object.keys(coverage[t]))),
   );
 
   const files = {};
