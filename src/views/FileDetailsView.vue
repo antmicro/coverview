@@ -39,7 +39,7 @@ const lines = Array.from(
 
 <template>
   <main>
-    <div v-if="lines.length == 0">NO COVERAGE DATA FOR THIS FILE</div>
+    <div v-if="lines.length == 0">NO COVERAGE / SOURCE DATA FOR THIS FILE IS AVAILABLE.</div>
     <table v-if="lines.length != 0">
       <thead><tr><th></th><th v-for="name in store.types">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
       <tbody>
