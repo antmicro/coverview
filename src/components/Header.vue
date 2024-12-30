@@ -72,14 +72,14 @@ async function onFileUpload(event) {
         </div>
       </div>
       <ul class="breadcrumbs">
-        <li><a href="/">{{ store.metadata.repo || 'Overview' }}</a></li>
+        <li><RouterLink to="/">{{ store.metadata.repo || 'Overview' }}</RouterLink></li>
         <li v-if="$route.params.moduleName">
           <img src="../assets/caret.svg" alt="caret" />
-          <a :href="'/#/' + encodeURIComponent($route.params.moduleName)">{{ $route.params.moduleName }}</a>
+          <RouterLink :to="'/' + encodeURIComponent($route.params.moduleName)">{{ $route.params.moduleName }}</RouterLink>
         </li>
         <li v-if="$route.params.fileName">
           <img src="../assets/caret.svg" alt="caret" />
-          <RouterLink :to="'/#/' + encodeURIComponent($route.params.moduleName) + '/'+ encodeURIComponent($route.params.fileName)">
+          <RouterLink :to="'/' + encodeURIComponent($route.params.moduleName) + '/'+ encodeURIComponent($route.params.fileName)">
             {{ decodeURIComponent($route.params.fileName) }}
           </RouterLink>
         </li>
