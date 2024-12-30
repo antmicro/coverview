@@ -1,20 +1,25 @@
 <script setup>
 import { useRoute } from "vue-router";
 import { store } from '../store.js';
+import { toRaw } from 'vue';
 const params = useRoute().params;
-const file = store.modules[params.moduleName].files[params.fileName];
-const lineCount = Object.keys(file.coverage.line.lines).toSorted().at(-1);
+const file = toRaw(store.modules[params.moduleName].files[params.fileName]);
 const source = file?.source?.split('\n');
+let lineCount = 0;
+if (source) {
+  lineCount = source.length;
+} else {
+  lineCount = Math.max(...(Object.values(file.coverage).map(x => Object.keys(x.lines || []).toSorted().at(-1))));
+}
 const lines = Array.from(
-  Array(parseInt(lineCount)).keys()
+  Array(lineCount).keys()
     .map(i => {
-      const coverageData = file.coverage.line.lines[i+1];
+      const coverageData = file.coverage.line?.lines[i+1];
       const lineData = { n: i+1, coverageData, color: coverageData > 0 ? "green" : (coverageData === 0 ? "red" : "") };
       if (source) lineData.source = source[i+1];
       return lineData;
  })
 );
-
 </script>
 
 <template>
@@ -34,6 +39,9 @@ const lines = Array.from(
 </template>
 
 <style scoped>
+table {
+  font-family: monospace;
+}
 th {
   text-align: left;
   color: #A1A1AA;
