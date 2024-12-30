@@ -12,7 +12,7 @@ export function getCoverage(module, file) {
     const fileObject = toRaw(store.modules)[module].files[file];
     const coverage = {};
     for (const type of store.types) {
-        coverage[type] = countFileCoverage(fileObject, type);
+        coverage[type] = countCoverageForFile(fileObject, type);
     }
     return coverage;
   } else if (module) {
@@ -24,25 +24,32 @@ export function getCoverage(module, file) {
 
 import { parseInfo } from "./parse.js";
 
-function countFileCoverage(file, type) {
-  let hits = 0;
-  let total = 0;
+export function countCoverageForLine(line) { // type not needed, since we're in specific type
+  const ret = { hits: 0, total: 0 };
+  if (line.groups) {
+    // if there are groups in this line, count fields and the values
+    for (const g of line.groups) {
+      ret.hits = line.groups[g].filter(x.value > 0).length;
+      ret.total = line.groups[g].length;
+    }
+  } else {
+    ret.hits = (line.value > 0) ? 1 : 0;
+    ret.total = 1;
+  }
+  return ret;
+}
+
+function countCoverageForFile(file, type) {
+  const ret = { hits: 0, total: 0 };
   const cov = file.coverage[type];
   if (cov && cov.lines) {
     for (const line of Object.values(cov.lines)) {
-      if (line.groups) {
-        // if there are groups in this line, count fields and the values
-        for (const g of line.groups) {
-          hits += line.groups[g].filter(x.value > 0).length;
-          total += line.groups[g].length;
-        }
-      } else {
-        if (line.value > 0) hits += 1;
-        total += 1;
-      }
+      const hitsAndTotal = countCoverageForLine(line);
+      ret.hits += hitsAndTotal.hits;
+      ret.total += hitsAndTotal.total;
     }
   }
-  return {hits: hits, total: total};
+  return ret;
 }
 
 
@@ -134,7 +141,7 @@ export function loadData(inputFiles) {
       let hits = 0;
       let total = 0;
       for (const file of Object.values(m.files)) {
-        const fileResults = countFileCoverage(file, type);
+        const fileResults = countCoverageForFile(file, type);
         hits += fileResults.hits;
         total += fileResults.total;
       }

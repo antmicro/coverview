@@ -1,6 +1,5 @@
 <script setup>
-import SortIcon from "../components/SortIcon.vue";
-import Info from "../components/Info.vue";
+//import SortIcon from "../components/SortIcon.vue";
 import { store, getCoverage, getRateColor, getRate } from '../store.js';
 import { useRoute } from 'vue-router';
 import { computed } from 'vue';
