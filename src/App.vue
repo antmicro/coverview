@@ -32,8 +32,10 @@ const default_links = {
       <!-- those props should be read from some input file -->
       <Header :date="store.metadata.timestamp || '?'" :logo="store.metadata.logo || ''" :title="store.metadata.title || 'Dashboard'" :commit="store.metadata.commit || '?'" :branch="store.metadata.branch || '?'"/>
       <div class="page-wrapper">
-        <Info :timestamp="store?.metadata?.timestamp?.replace('T', ' ') || '?'"></Info>
-        <RouterView :key="$route.path"/>
+        <RouterView :key="$route.path" v-slot="{ Component }">
+          <Info :timestamp="store?.metadata?.timestamp?.replace('T', ' ') || '?'"></Info>
+          <component :is="Component" />
+        </RouterView>
       </div>
     </div>
     <Footer :links="store.metadata.links || default_links" logo="logo.svg" copyright="Copyright Antmicro, 2023-2024." />
