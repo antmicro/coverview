@@ -56,6 +56,7 @@ const lines = Array.from(
 <style scoped>
 table {
   font-family: monospace;
+  font-size: 0.8rem;
 }
 th {
   text-align: left;
@@ -63,7 +64,7 @@ th {
 }
 
 th, td {
-  padding: 0.5rem;
+  padding: 0.3rem;
   white-space: pre-wrap;
 }
 td.break {
