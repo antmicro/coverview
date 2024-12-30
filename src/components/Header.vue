@@ -79,7 +79,9 @@ async function onFileUpload(event) {
         </li>
         <li v-if="$route.params.fileName">
           <img src="../assets/caret.svg" alt="caret" />
-          <a :href="'/#/' + encodeURIComponent($route.params.moduleName) + '/'+ encodeURIComponent($route.params.fileName)">{{ decodeURIComponent($route.params.fileName) }}</a>
+          <RouterLink :to="'/#/' + encodeURIComponent($route.params.moduleName) + '/'+ encodeURIComponent($route.params.fileName)">
+            {{ decodeURIComponent($route.params.fileName) }}
+          </RouterLink>
         </li>
       </ul>
     </nav>
