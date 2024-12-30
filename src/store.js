@@ -29,7 +29,6 @@ export function countCoverageForLine(line) { // type not needed, since we're in 
   const ret = { hits: 0, total: 0 };
   if (line.groups) {
     // if there are groups in this line, count fields and the values
-    console.log(line.groups);
     for (const g of Object.values(line.groups)) {
       ret.hits = g.filter(x => x.value > 0).length;
       ret.total = g.length;

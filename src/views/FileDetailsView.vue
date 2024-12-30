@@ -31,7 +31,7 @@ const lines = Array.from(
         if (line) coverageData[type] = countCoverageForLine(line);
       }
       const lineData = { n: i+1, coverageData, color: getColor(coverageData) };
-      if (source) lineData.source = source[i+1];
+      if (source) lineData.source = source[i];
       return lineData;
  })
 );
