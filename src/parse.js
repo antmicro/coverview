@@ -20,7 +20,7 @@ function parseInfo(content) {
       if (!(line in curr.lines)) {
         curr.lines[line] = {};
       }
-      if (!(groups in curr.lines[line])) {
+      if (!('groups' in curr.lines[line])) {
         curr.lines[line].groups = {};
       }
       if (!(group in curr.lines[line].groups)) {

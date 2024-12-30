@@ -1,9 +1,8 @@
 <script setup>
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 
-import { store } from '../store.js';
-import { toRaw } from 'vue';
 import router from '../router/index.js';
+import { store } from '../store.js';
 
 const props = defineProps({
   date: String,
@@ -13,7 +12,13 @@ const props = defineProps({
   title: String
 })
 
-async function onChange(event) {
+function onDatasetChange(event) {
+  store.selected_dataset = event.target.value;
+  sessionStorage.setItem('dataset', event.target.value);
+  router.go(); // this will automagically reload data anyway
+}
+
+async function onFileUpload(event) {
   const file = event.target.files[0];
   const fileInfo = `
     File Name: ${file.name}
@@ -46,7 +51,10 @@ async function onChange(event) {
         </a>
         <span class="path-text">{{ title }}</span>
       </div>
-      <input type="file" name="file" id="fileInput" accept=".zip" @change="onChange($event)">
+      <input type="file" name="file" id="fileInput" accept=".zip" @change="onFileUpload($event)">
+      <select v-if="Object.keys(store?.metadata?.datasets || []).length > 1" @change="onDatasetChange($event)" :value="store.selected_dataset">
+        <option v-for="dataset in Object.keys(store.metadata.datasets)" :value="dataset">{{ dataset }}</option>
+      </select>
       <div class="nav-right">
         <span class="info-item date">
           <img src="../assets/date.svg" alt="Date icon" />

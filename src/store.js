@@ -4,7 +4,8 @@ export const store = reactive({
   types: [],           // available coverage types
   modules: {},         // coverage data aggregated by module
   coverage_totals: {}, // totals for coverage
-  metadata: {}         // other data
+  metadata: {},        // other data
+  selected_dataset: '' // the currently selected dataset
 })
 
 export function getCoverage(module, file) {
@@ -28,9 +29,10 @@ export function countCoverageForLine(line) { // type not needed, since we're in 
   const ret = { hits: 0, total: 0 };
   if (line.groups) {
     // if there are groups in this line, count fields and the values
-    for (const g of line.groups) {
-      ret.hits = line.groups[g].filter(x.value > 0).length;
-      ret.total = line.groups[g].length;
+    console.log(line.groups);
+    for (const g of Object.values(line.groups)) {
+      ret.hits = g.filter(x => x.value > 0).length;
+      ret.total = g.length;
     }
   } else {
     ret.hits = (line.value > 0) ? 1 : 0;
@@ -87,16 +89,26 @@ export function loadData(inputFiles) {
     }
   }
 
-  // for now we only handle 1 set of info files
-  const layout = config.datasets[Object.keys(config.datasets)[0]];
+  if (!(store.selected_dataset in config.datasets)) {
+    const firstDataset = Object.keys(config.datasets)[0]
+    store.selected_dataset = firstDataset;
+    sessionStorage.setItem("dataset", firstDataset);
+  }
+
+  const layout = config.datasets[store.selected_dataset];
   const types = Object.keys(layout);
 
-  delete config.datasets;
   const metadata = config;
-  console.log(metadata);
 
   const coverage = {};
   for (let [k, v] of Object.entries(layout)) {
+    if (!inputFiles[v]) {
+      store.types = [];
+      store.modules = {};
+      store.coverage_totals = {};
+      console.error(`file ${v} was not loaded! Check if it's in the package.`);
+      return;
+    }
     coverage[k] = parseInfo(inputFiles[v]);
   }
 

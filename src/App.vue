@@ -7,6 +7,8 @@ import router from "./router/index.js";
 import Info from "./components/Info.vue";
 
 let f = sessionStorage.getItem("files");
+let d = sessionStorage.getItem("dataset");
+store.selected_dataset = d || '';
 if (f) {
   loadData(JSON.parse(f));
 }
@@ -22,7 +24,6 @@ function reset() {
 const default_links = {
   "Coverview": "https://github.com/antmicro/coverview"
 }
-
 </script>
 <template>
   <div class="app-container">
