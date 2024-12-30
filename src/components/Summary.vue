@@ -1,10 +1,10 @@
 <script setup>
 import { getCoverage, getRateColor, getRate } from '../store.js';
-import { toRaw } from "vue";
+import { computed } from 'vue'
 
 const props = defineProps(['module', 'file']);
 
-let coverage_summaries = getCoverage(props.module, props.file);
+let coverage_summaries = computed(() => getCoverage(props.module, props.file));
 </script>
 
 <template>

@@ -2,7 +2,7 @@
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 
 import router from '../router/index.js';
-import { store } from '../store.js';
+import { store, loadData } from '../store.js';
 
 const props = defineProps({
   date: String,
@@ -14,12 +14,14 @@ const props = defineProps({
 
 function onDatasetChange(event) {
   store.selected_dataset = event.target.value;
-  sessionStorage.setItem('dataset', event.target.value);
-  router.go(); // this will automagically reload data anyway
+  loadData(store.files);
 }
 
 async function onFileUpload(event) {
   const file = event.target.files[0];
+  if (!file) {
+    return;
+  }
   const fileInfo = `
     File Name: ${file.name}
     File Size: ${file.size} bytes
@@ -36,9 +38,11 @@ async function onFileUpload(event) {
     files[e.filename] = await data.text();
   }
   zipReader.close();
-  sessionStorage.setItem('files', JSON.stringify(files));
+  store.files = files;
+  store.loadedFromFile = true;
   // need to handle "404"
-  router.go(); // this will automagically reload data anyway
+  loadData(store.files);
+  router.push('/');
 };
 </script>
 

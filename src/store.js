@@ -1,11 +1,13 @@
 import { reactive, toRaw } from 'vue'
 
 export const store = reactive({
-  types: [],           // available coverage types
-  modules: {},         // coverage data aggregated by module
-  coverage_totals: {}, // totals for coverage
-  metadata: {},        // other data
-  selected_dataset: '' // the currently selected dataset
+  files: {},
+  loadedFromFile: false, // data was loaded from file
+  types: [],             // available coverage types
+  modules: {},           // coverage data aggregated by module
+  coverage_totals: {},   // totals for coverage
+  metadata: {},          // other data
+  selected_dataset: ''   // the currently selected dataset
 })
 
 export function getCoverage(module, file) {

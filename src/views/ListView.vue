@@ -65,17 +65,17 @@ function navigate(target) {
           <th colspan="3" class="group-header" v-for="name in store.types">{{ name }}</th>
         </tr>
         <tr>
-          <th class="sortable-header source-column">
+          <th class="source-column">
             Source
           </th>
-          <template v-for="name in store.types">
-            <th class="sortable-header rate-column">
+          <template v-for="_ in store.types">
+            <th class="rate-column">
               Rate
             </th>
-            <th class="sortable-header hit-column">
+            <th class="hit-column">
               Hit
             </th>
-            <th class="sortable-header total-column">
+            <th class="total-column">
               Total
             </th>
           </template>
@@ -163,7 +163,6 @@ th {
   font-weight: 500;
   font-size: 0.875rem;
   white-space: nowrap;
-  cursor: pointer;
 }
 
 .source-link {
@@ -217,7 +216,7 @@ th {
   background-color: var(--border-primary);
 }
 
-.sortable-header {
+/*.sortable-header {
   position: relative;
   cursor: pointer;
   user-select: none;
@@ -248,7 +247,7 @@ th {
 
 .sort-icon svg path.highlighted {
   color: var(--text-primary);
-}
+}*/
 
 @media (max-width: 768px) {
   .page-wrapper {

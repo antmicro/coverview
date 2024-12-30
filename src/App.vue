@@ -6,18 +6,15 @@ import { loadData, store } from "./store.js";
 import router from "./router/index.js";
 import Info from "./components/Info.vue";
 
-let f = sessionStorage.getItem("files");
-let d = sessionStorage.getItem("dataset");
-store.selected_dataset = d || '';
-if (f) {
-  loadData(JSON.parse(f));
-}
-else if (Object.keys(files).length !== 0) {
-  loadData(files);
+if (Object.keys(store.modules).length === 0) {
+  if (Object.keys(store.files).length !== 0) {
+    loadData(store.files);
+  }
 }
 
 function reset() {
-  sessionStorage.removeItem("files");
+  store.modules = {};
+  store.loadedFromFile = false;
   router.go();
 }
 
@@ -28,7 +25,7 @@ const default_links = {
 <template>
   <div class="app-container">
     <div class="content">
-      <div class="reset" v-if="f" @click="reset">Data from session storage. Click here to reset.</div>
+      <div class="reset" v-if="store.loadedFromFile" @click="reset">Data from file. Click here to reset.</div>
       <!-- those props should be read from some input file -->
       <Header :date="store.metadata.timestamp || '?'" :logo="store.metadata.logo || ''" :title="store.metadata.title || 'Dashboard'" :commit="store.metadata.commit || '?'" :branch="store.metadata.branch || '?'"/>
       <div class="page-wrapper">

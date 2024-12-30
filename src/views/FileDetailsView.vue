@@ -1,17 +1,17 @@
 <script setup>
 import { useRoute } from "vue-router";
 import { store, countCoverageForLine } from '../store.js';
-import { toRaw } from 'vue';
+import { computed } from 'vue';
 
 const params = useRoute().params;
-const file = toRaw(store.modules[params.moduleName].files[params.fileName]);
-const source = file?.source?.split('\n');
+const file = computed(() => store.modules[params.moduleName].files[params.fileName]);
+const source = file?.value?.source?.split('\n');
 let lineCount = 0;
 
 if (source) {
   lineCount = source.length;
 } else {
-  lineCount = Math.max(...(Object.values(file.coverage).map(x => Object.keys(x.lines || []).toSorted().at(-1) || 0)));
+  lineCount = Math.max(...(Object.values(file.value.coverage).map(x => Object.keys(x.lines || []).toSorted().at(-1) || 0)));
 }
 
 function getColor(coverageData) {
@@ -22,19 +22,19 @@ function getColor(coverageData) {
   return "yellow";
 }
 
-const lines = Array.from(
+let lines = computed(() => Array.from(
   Array(lineCount).keys()
     .map(i => {
       const coverageData = {};
       for (const type of store.types) {
-        const line = file.coverage[type]?.lines[i+1];
+        const line = file.value.coverage[type]?.lines[i+1];
         if (line) coverageData[type] = countCoverageForLine(line);
       }
       const lineData = { n: i+1, coverageData, color: getColor(coverageData) };
       if (source) lineData.source = source[i];
       return lineData;
  })
-);
+));
 </script>
 
 <template>
