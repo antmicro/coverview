@@ -1,11 +1,12 @@
 <script setup>
 import Summary from "../components/Summary.vue";
+import { store } from '../store.js';
 const props = defineProps({ timestamp: String })
 </script>
 <template>
   <div class="info-section">
     <div class="info-header">
-      <h1 class="info-title">{{$route.params.fileName || $route.params.moduleName || 'TOP LEVEL VIEW'}}</h1>
+      <h1 class="info-title">{{$route.params.fileName || $route.params.moduleName || store.metadata.repo || 'Overview'}}</h1>
       <div class="info-metadata">
         <span class="metadata-item">Test timestamp: {{ timestamp }}</span>
       </div>
