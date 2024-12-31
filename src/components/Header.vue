@@ -12,6 +12,8 @@ const props = defineProps({
   title: String
 })
 
+const showFilePicker = Object.keys(files).length === 0;
+
 function onDatasetChange(event) {
   store.selected_dataset = event.target.value;
   loadData(store.files);
@@ -56,7 +58,7 @@ async function onFileUpload(event) {
           </a>
           <span class="path-text">{{ title }}</span>
         </div>
-        <input type="file" name="file" id="fileInput" accept=".zip" @change="onFileUpload($event)">
+        <input v-if="showFilePicker" type="file" name="file" id="fileInput" accept=".zip" @change="onFileUpload($event)">
         <select v-if="Object.keys(store?.metadata?.datasets || []).length > 1" @change="onDatasetChange($event)" :value="store.selected_dataset">
           <option v-for="dataset in Object.keys(store.metadata.datasets)" :value="dataset">{{ dataset }}</option>
         </select>
