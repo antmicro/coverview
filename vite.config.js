@@ -7,6 +7,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 // https://vite.dev/config/
 export default defineConfig({
   build: {
+    assetsInlineLimit: 100000000,
     rollupOptions: {
       output: {
         inlineDynamicImports: false,

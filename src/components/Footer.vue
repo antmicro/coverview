@@ -4,13 +4,12 @@ const props = defineProps({
   copyright: String,
   links: Object
 })
-
 </script>
 
 <template>
   <footer class="footer">
     <div class="footer-left">
-      <img :src="logo" class="logo" />
+      <img src="../assets/logo.svg" class="logo" />
       <p class="copyright">{{ copyright }}</p>
     </div>
     <div class="footer-right">
