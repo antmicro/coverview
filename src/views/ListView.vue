@@ -83,7 +83,11 @@ function navigate(target) {
       </thead>
       <tbody>
         <tr class="link" @click="navigate(item.source)" v-for="item in tableData" :key="item.source">
-          <td class="name">{{ item.source }}</td>
+          <td class="name">
+            <img v-if="$route.params.moduleName" src="../assets/file.svg" alt="file" />
+            <img v-else src="../assets/module.svg" alt="module" />
+            {{ item.source }}
+          </td>
           <template v-for="name in store.types">
             <td class="rate-cell">
               <div class="progress-wrapper">
@@ -278,6 +282,17 @@ th {
   .sortable-header {
     padding-right: 1rem;
   }
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name img {
+  width: 0.8rem;
+  height: auto;
 }
 
 @media (max-width: 640px) {
