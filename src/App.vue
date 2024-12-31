@@ -3,6 +3,7 @@ import { RouterView } from "vue-router";
 import Header from "./components/Header.vue";
 import Footer from "./components/Footer.vue";
 import { loadData, store, decompress } from "./store.js";
+import { onMounted } from "vue";
 import router from "./router/index.js";
 import Info from "./components/Info.vue";
 
@@ -35,6 +36,10 @@ function reset() {
 const default_links = {
   "Coverview": "https://github.com/antmicro/coverview"
 }
+
+onMounted(() => document.onreadystatechange = () => {
+  if (document.readyState === "complete") document.body.style.visibility = "visible";
+})
 </script>
 <template>
   <div class="app-container">
