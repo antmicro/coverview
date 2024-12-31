@@ -1,8 +1,6 @@
 <script setup>
-import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
-
 import router from '../router/index.js';
-import { store, loadData } from '../store.js';
+import { store, loadData, decompress } from '../store.js';
 
 const props = defineProps({
   date: String,
@@ -12,7 +10,7 @@ const props = defineProps({
   title: String
 })
 
-const showFilePicker = Object.keys(files).length === 0;
+const showFilePicker = Object.keys(originalFiles).length === 0;
 
 function onDatasetChange(event) {
   store.selected_dataset = event.target.value;
@@ -20,27 +18,12 @@ function onDatasetChange(event) {
 }
 
 async function onFileUpload(event) {
-  const file = event.target.files[0];
-  if (!file) {
+  const zipFile = event.target.files[0];
+  if (!zipFile) {
     return;
   }
-  const fileInfo = `
-    File Name: ${file.name}
-    File Size: ${file.size} bytes
-    File Type: ${file.type}
-  `;
 
-  const zipFileReader = new BlobReader(file);
-  const zipReader = new ZipReader(zipFileReader);
-  const entries = await zipReader.getEntries();
-
-  const files = {};
-  for (const e of entries) {
-    const data = await e.getData(new BlobWriter());
-    files[e.filename] = await data.text();
-  }
-  zipReader.close();
-  store.files = files;
+  store.files = await decompress(zipFile);
   store.loadedFromFile = true;
   // need to handle "404"
   loadData(store.files);

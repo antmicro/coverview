@@ -9,7 +9,7 @@ const props = defineProps({
 <template>
   <footer class="footer">
     <div class="footer-left">
-      <img src="../assets/logo.svg" class="logo" />
+      <a href="https://github.com/antmicro/coverview"><img src="../assets/logo.svg" class="logo" /></a>
       <p class="copyright">{{ copyright }}</p>
     </div>
     <div class="footer-right">

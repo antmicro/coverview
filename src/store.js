@@ -1,5 +1,7 @@
 import { reactive, toRaw } from 'vue'
 
+import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
+
 export const store = reactive({
   files: {},
   loadedFromFile: false, // data was loaded from file
@@ -143,7 +145,6 @@ export function loadData(inputFiles) {
       },
     ]),
   );
-  console.log(JSON.stringify(modules));
 
   let coverage_totals = {};
 
@@ -181,4 +182,18 @@ export function getRateColor(rate, muted=false) {
 
 export function getRate(hitsAndTotals) {
   return (hitsAndTotals && hitsAndTotals.total > 0) ? parseFloat(((hitsAndTotals.hits/hitsAndTotals.total) * 100).toFixed(1)) : 'N/A';
+}
+
+export async function decompress(zipFile) {
+  const zipFileReader = new BlobReader(await zipFile);
+  const zipReader = new ZipReader(zipFileReader);
+  const entries = await zipReader.getEntries();
+
+  const files = {};
+  for (const e of entries) {
+    const data = await e.getData(new BlobWriter());
+    files[e.filename] = await data.text();
+  }
+  zipReader.close();
+  return files;
 }

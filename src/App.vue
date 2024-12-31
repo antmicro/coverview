@@ -2,20 +2,29 @@
 import { RouterView } from "vue-router";
 import Header from "./components/Header.vue";
 import Footer from "./components/Footer.vue";
-import { loadData, store } from "./store.js";
+import { loadData, store, decompress } from "./store.js";
 import router from "./router/index.js";
 import Info from "./components/Info.vue";
 
-if (Object.keys(store.modules).length === 0) {
-  if (Object.keys(store.files).length !== 0) {
-    loadData(store.files);
-  } else {
-    if (Object.keys(files).length !== 0) {
-      store.files = files;
-      loadData(files);
+async function load() {
+  if (Object.keys(store.modules).length === 0) {
+    if (Object.keys(store.files).length !== 0) {
+      loadData(store.files);
+    } else {
+      if (Object.keys(originalFiles).length !== 0) {
+        store.files = originalFiles;
+        loadData(originalFiles);
+      } else if (typeof fetchData !== 'undefined') {
+        const fetchedFiles = await fetch(fetchData).then(res => res.blob());
+        const unzipped = await decompress(fetchedFiles);
+        originalFiles = unzipped;
+        loadData(originalFiles);
+      }
     }
   }
-}
+  }
+
+load()
 
 function reset() {
   store.modules = {};

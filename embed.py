@@ -7,7 +7,15 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--inject-data')
+parser.add_argument('--fetch-data')
 args = parser.parse_args()
+
+if (args.inject_data and args.fetch_data):
+    print("Cannot inject data and fetch it in runtime at the same time, the flags are contradictory.")
+    import sys
+    sys.exit(1)
+
+original_snippet = 'let originalFiles = {}'
 
 with open(index_filename, 'r+') as f:
     content = f.read()
@@ -28,7 +36,11 @@ with open(index_filename, 'r+') as f:
 
         os.chdir(cwd)
 
-        content = content.replace('let files = {}', 'let files = ' + json.dumps(files))
+        content = content.replace(original_snippet, 'let originalFiles = ' + json.dumps(files))
+
+    elif args.fetch_data:
+        fetch_snippet = 'let originalFiles = {}; let fetchData = "%s";' % args.fetch_data
+        content = content.replace(original_snippet, fetch_snippet)
 
     import re
     r = r'(<script type="module" crossorigin src="/(assets/index-[\w\-]+.js)"></script>)'
