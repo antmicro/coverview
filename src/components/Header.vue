@@ -63,7 +63,7 @@ async function onFileUpload(event) {
         <div class="nav-right">
           <span class="info-item date">
             <img src="../assets/date.svg" alt="Date icon" />
-            <span class="info-text">{{ date.substring(0, 10) }}</span>
+            <span class="info-text">{{ date ? (new Date(date)).toLocaleDateString('sv') : '?' }}</span>
           </span>
           <span class="info-item branch">
             <img src="../assets/branch.svg" alt="Branch icon" />

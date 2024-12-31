@@ -8,7 +8,7 @@ const props = defineProps({ timestamp: String })
     <div class="info-header">
       <h1 class="info-title">{{$route.params.fileName || $route.params.moduleName || store.metadata.repo || 'Overview'}}</h1>
       <div class="info-metadata">
-        <span class="metadata-item">Test timestamp: {{ timestamp }}</span>
+        <span class="metadata-item">Test timestamp: {{ timestamp ? (new Date(timestamp)).toLocaleString('sv') : '?' }}</span>
       </div>
     </div>
     <Summary :module="$route.params.moduleName" :file="$route.params.fileName"></Summary>
