@@ -25,7 +25,7 @@ let tableData = computed(() => {
     }));
     totals = getCoverage(moduleName);
   }
-  return td;
+  return td.sort((a,b) => { return a.source.localeCompare(b.source) });
 });
 
 /*const sortOrder = ref("asc");
