@@ -46,7 +46,7 @@ onMounted(() => document.onreadystatechange = () => {
     <div class="content">
       <div class="reset" v-if="store.loadedFromFile" @click="reset">Data from file. Click here to reset.</div>
       <!-- those props should be read from some input file -->
-      <Header :date="store.metadata.timestamp" :logo="store.metadata.logo || ''" :title="store.metadata.title || 'Dashboard'" :commit="store.metadata.commit || '?'" :branch="store.metadata.branch || '?'"/>
+      <Header :date="store.metadata.timestamp" :logo="store.metadata.logo || ''" :title="store.metadata.title || 'Dashboard'" :commit="store.metadata.commit || '?'" :branch="store.metadata.branch || '?'" :repo="store.metadata.repo || '?'"/>
       <div class="page-wrapper">
         <RouterView :key="$route.path" v-slot="{ Component }">
           <Info :timestamp="store?.metadata?.timestamp"></Info>

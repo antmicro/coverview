@@ -5,6 +5,7 @@ import { store, loadData, decompress } from '../store.js';
 const props = defineProps({
   date: String,
   branch: String,
+  repo: String,
   commit: String,
   logo: String,
   title: String
@@ -50,6 +51,11 @@ async function onFileUpload(event) {
             <img src="../assets/date.svg" alt="Date icon" />
             <span class="info-text">{{ date ? (new Date(date)).toLocaleDateString('sv') : '?' }}</span>
           </span>
+          <span class="info-item repo">
+            <img src="../assets/repo.svg" alt="Repo icon" />
+            <a :href="repo" v-if="repo.startsWith('https://') || repo.startsWith('http://')">{{ repo.split("/").pop() }}</a>
+            <span class="info-text branch" v-else>{{ repo.split("/").pop() }}</span>
+          </span>
           <span class="info-item branch">
             <img src="../assets/branch.svg" alt="Branch icon" />
             <span class="info-text branch">{{ branch }}</span>
@@ -61,7 +67,7 @@ async function onFileUpload(event) {
         </div>
       </div>
       <ul class="breadcrumbs">
-        <li><RouterLink to="/">{{ store.metadata.repo || 'Overview' }}</RouterLink></li>
+        <li><RouterLink to="/">{{ store.metadata.repo.split("/").pop() || 'Overview' }}</RouterLink></li>
         <li v-if="$route.params.moduleName">
           <img src="../assets/caret.svg" alt="caret" />
           <RouterLink :to="'/' + encodeURIComponent($route.params.moduleName)">{{ $route.params.moduleName }}</RouterLink>
