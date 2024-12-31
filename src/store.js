@@ -138,7 +138,7 @@ export function loadData(inputFiles) {
       {
         files: Object.fromEntries(
           Object.entries(files)
-            .filter(([k,_]) => k.startsWith(name))
+            .filter(([k,_]) => k.split("/").slice(0, -1).join("/") === name)
             .map(([k,v]) => [k.split("/").at(-1), { ...v, contents: null }]),
         ),
         coverage: {}
