@@ -13,6 +13,7 @@ if (source) {
 } else {
   lineCount = Math.max(...(Object.values(file.value.coverage).map(x => Object.keys(x.lines || []).toSorted().at(-1) || 0)));
 }
+console.log(lineCount)
 
 function getColor(coverageData) {
   if (Object.keys(coverageData).length === 0) return "";
