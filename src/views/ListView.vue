@@ -62,13 +62,13 @@ function navigate(target) {
       <thead>
         <tr class="header-groups">
           <th></th>
-          <th colspan="3" class="group-header" v-for="name in store.types">{{ name }}</th>
+          <th colspan="3" class="group-header" v-for="name in Object.keys(store.types)">{{ name }}</th>
         </tr>
         <tr>
           <th class="source-column">
             Source
           </th>
-          <template v-for="_ in store.types">
+          <template v-for="_ in Object.keys(store.types)">
             <th class="rate-column">
               Rate
             </th>
@@ -88,7 +88,7 @@ function navigate(target) {
             <img v-else src="../assets/module.svg" alt="module" />
             {{ item.source }}
           </td>
-          <template v-for="name in store.types">
+          <template v-for="name in Object.keys(store.types)">
             <td class="rate-cell">
               <div class="progress-wrapper">
                 <div class="progress-container">

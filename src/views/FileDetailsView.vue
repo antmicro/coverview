@@ -26,7 +26,7 @@ let lines = computed(() => Array.from(
   Array(lineCount).keys()
     .map(i => {
       const coverageData = {};
-      for (const type of store.types) {
+      for (const type of Object.keys(store.types)) {
         const line = file.value.coverage[type]?.lines[i+1];
         if (line) coverageData[type] = countCoverageForLine(line);
       }
@@ -41,11 +41,11 @@ let lines = computed(() => Array.from(
   <main>
     <div v-if="lines.length == 0">NO COVERAGE / SOURCE DATA FOR THIS FILE IS AVAILABLE.</div>
     <table v-if="lines.length != 0">
-      <thead><tr><th></th><th v-for="name in store.types">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
+      <thead><tr><th></th><th v-for="name in Object.keys(store.types)">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
       <tbody>
         <tr v-for="line in lines" :key="line.n">
           <td>{{ line.n }}</td>
-          <td v-for="type in store.types" :class="line.color"><span v-if="line.coverageData[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span></td>
+          <td v-for="type in Object.keys(store.types)" :class="line.color"><span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span></td>
           <td :class="line.color" style="color: #52525B;">:</td>
           <td class="break" :class="line.color">{{ source ? line.source : 'NO LINE SOURCE AVAILABLE' }}</td>
         </tr>

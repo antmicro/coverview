@@ -1,6 +1,7 @@
 <script setup>
 import { getCoverage, getRateColor, getRate } from '../store.js';
-import { computed } from 'vue'
+import { computed } from 'vue';
+import { store } from '../store.js';
 
 const props = defineProps(['module', 'file']);
 
@@ -20,7 +21,7 @@ let coverage_summaries = computed(() => getCoverage(props.module, props.file));
             </thead>
             <tbody>
             <tr v-for="[name, summary] in Object.entries(coverage_summaries)">
-                <th>{{ name }}</th>
+                <th>{{ name }} <span @click='() => store.types[name].visibility = !store.types[name].visibility'>{{ ( store.types[name].visibility ) ? 'HIDE' : 'SHOW' }} </span></th>
                 <td :style="{ backgroundColor: getRateColor(getRate(summary), true) }">{{ getRate(summary) }}%</td>
                 <td>{{ summary.hits }}</td>
                 <td>{{ summary.total }}</td>

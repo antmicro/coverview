@@ -5,9 +5,8 @@ import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 export const store = reactive({
   files: {},
   loadedFromFile: false, // data was loaded from file
-  types: [],             // available coverage types
+  types: {},             // available coverage types
   modules: {},           // coverage data aggregated by module
-  coverage_totals: {},   // totals for coverage
   metadata: {},          // other data
   selected_dataset: ''   // the currently selected dataset
 })
@@ -16,14 +15,22 @@ export function getCoverage(module, file) {
   if (module && file) {
     const fileObject = toRaw(store.modules)[module].files[file];
     const coverage = {};
-    for (const type of store.types) {
+    for (const type of Object.keys(store.types)) {
         coverage[type] = countCoverageForFile(fileObject, type);
     }
     return coverage;
   } else if (module) {
     return toRaw(store.modules[module].coverage);
   } else {
-    return toRaw(store.coverage_totals);
+    const coverage_totals = {};
+    for (const type of Object.keys(store.types)) {
+      coverage_totals[type] = { hits: 0, total: 0 };
+      for (const [name, m] of Object.entries(store.modules)) {
+        coverage_totals[type].hits += toRaw(m).coverage[type].hits;
+        coverage_totals[type].total += toRaw(m).coverage[type].total;
+      }
+    }
+    return coverage_totals;
   }
 }
 
@@ -71,9 +78,8 @@ export function loadData(inputFiles) {
     }
   }
   catch (e) {
-    store.types = [];
+    store.types = {};
     store.modules = {};
-    store.coverage_totals = {};
     console.error(e);
     return;
   }
@@ -106,9 +112,8 @@ export function loadData(inputFiles) {
   const coverage = {};
   for (let [k, v] of Object.entries(layout)) {
     if (!inputFiles[v]) {
-      store.types = [];
+      store.types = {};
       store.modules = {};
-      store.coverage_totals = {};
       console.error(`file ${v} was not loaded! Check if it's in the package.`);
       return;
     }
@@ -146,11 +151,9 @@ export function loadData(inputFiles) {
     ]),
   );
 
-  let coverage_totals = {};
-
   // count coverages for modules; for files it's trivial to count on the fly, total is also trivial once you have modules
   for (const type of types) {
-    coverage_totals[type] = { hits: 0, total: 0 };
+    store.types[type] = { visibility: true };
     for (const [name, m] of Object.entries(modules)) {
       let hits = 0;
       let total = 0;
@@ -159,16 +162,11 @@ export function loadData(inputFiles) {
         hits += fileResults.hits;
         total += fileResults.total;
       }
-
       modules[name].coverage[type] = { hits: hits, total: total }
-      coverage_totals[type].hits += hits;
-      coverage_totals[type].total += total;
     }
   }
 
-  store.types = types;
   store.modules = modules;
-  store.coverage_totals = coverage_totals;
   store.metadata = metadata;
 }
 
