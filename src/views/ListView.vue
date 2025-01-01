@@ -9,13 +9,11 @@ let route = useRoute();
 
 let tableData = computed(() => {
   let td = [];
-  let totals = {};
   if (!route.params.moduleName) {
     td = Object.entries(store.modules).map(([module, _]) => ({
       source: module,
       data: getCoverage(decodeURIComponent(module), null)
     }));
-    totals = getCoverage(null, null)
   } else {
     const moduleName = decodeURIComponent(route.params.moduleName);
     if (!(moduleName in store.modules)) return [];
@@ -23,7 +21,6 @@ let tableData = computed(() => {
       source: fileName,
       data: getCoverage(moduleName, fileName)
     }));
-    totals = getCoverage(moduleName);
   }
   return td.sort((a,b) => { return a.source.localeCompare(b.source) });
 });
