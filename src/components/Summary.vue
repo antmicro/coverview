@@ -14,6 +14,7 @@ let coverage_summaries = computed(() => getCoverage(props.module, props.file));
             <thead>
             <tr>
                 <th></th>
+                <th></th>
                 <th>Coverage</th>
                 <th>Hit</th>
                 <th>Total</th>
@@ -21,8 +22,9 @@ let coverage_summaries = computed(() => getCoverage(props.module, props.file));
             </thead>
             <tbody>
             <tr v-for="[name, summary] in Object.entries(coverage_summaries)">
-                <th>{{ name }} <span @click='() => store.types[name].visibility = !store.types[name].visibility'>{{ ( store.types[name].visibility ) ? 'HIDE' : 'SHOW' }} </span></th>
-                <td :style="{ backgroundColor: getRateColor(getRate(summary), true) }">{{ getRate(summary) }}%</td>
+                <th class="visibility"><div @click='() => store.types[name].visibility = !store.types[name].visibility'><img src="../assets/visibility.svg" alt="Hide icon" v-if="store.types[name].visibility"/><img src="../assets/visibility-off.svg" alt="Show icon" v-else/></div></th>
+                <th>{{ name }}</th>
+                <td :style="{ backgroundColor: getRateColor(getRate(summary), true, !store.types[name].visibility) }">{{ getRate(summary) }}%</td>
                 <td>{{ summary.hits }}</td>
                 <td>{{ summary.total }}</td>
             </tr>
@@ -54,5 +56,15 @@ th, td {
 th {
   font-weight: 500;
   font-size: 0.875rem;
+}
+
+th.visibility > div {
+  padding: 3px 0 0 0;
+}
+
+th.visibility > div > img {
+  width:1.25rem;
+  height:1.25rem;
+  cursor: pointer;
 }
 </style>

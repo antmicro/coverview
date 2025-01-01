@@ -1,4 +1,1 @@
-include:
-  - project: coverview-ci-files
-    file: test.yaml
-
+include: [ { project: coverview-ci-files, file: test.yaml } ]

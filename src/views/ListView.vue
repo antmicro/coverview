@@ -93,11 +93,11 @@ function navigate(target) {
                     class="progress-bar"
                     :style="{
                       width: `${getRate(item.data[name])}%`,
-                      backgroundColor: getRateColor(getRate(item.data[name])),
+                      backgroundColor: getRateColor(getRate(item.data[name]), false, !store.types[name].visibility),
                     }"
                   ></div>
                 </div>
-                <span class="rate-value" :style="{ color: getRateColor(getRate(item.data[name])) }"> {{ getRate(item.data[name]) }}% </span>
+                <span class="rate-value" :style="{ color: getRateColor(getRate(item.data[name]), false, !store.types[name].visibility) }"> {{ getRate(item.data[name]) }}% </span>
               </div>
             </td>
             <td class="hit-cell">{{ item.data[name]?.hits || 'N/A'}}</td>

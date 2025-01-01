@@ -170,12 +170,28 @@ export function loadData(inputFiles) {
   store.metadata = metadata;
 }
 
-export function getRateColor(rate, muted=false) {
-  if (rate == 'N/A') return muted ? "#262626" : "#737373"; // neutral
-  if (rate >= 80) return muted ? "#166534" : "#22c55e"; // green
-  if (rate >= 60) return muted ? "#854d0e" : "#eab308"; // yellow
-  if (rate >= 1) return muted ? "#9a3412" : "#f97316"; // orange
-  return muted ? "#991b1b" : "#ef4444"; // red
+export function getRateColor(rate, muted=false, grayscale=false) {
+  let color = muted ? "#991b1b" : "#ef4444"; // red
+  if (rate == 'N/A') {
+      color = muted ? "#262626" : "#737373"; // neutral
+  } else if (rate >= 80) {
+      color = muted ? "#166534" : "#22c55e"; // green
+  } else if (rate >= 60) {
+      color = muted ? "#854d0e" : "#eab308"; // yellow
+  } else if (rate >= 1) {
+      color = muted ? "#9a3412" : "#f97316"; // orange
+  }
+  if (grayscale) {
+      let red = parseInt(color.substring(1,3),16);
+      let green = parseInt(color.substring(3,5),16);
+      let blue =  parseInt(color.substring(5,7),16);
+      let gray = Math.round(0.299 * red + 0.587 * green + 0.114 * blue);
+      if (gray > 255) gray = 255;
+      let gray_s = gray.toString(16);
+      if (gray_s.length == 1) gray_s = "0" + gray_s;
+      color = "#" + gray_s + gray_s + gray_s; 
+  }
+  return color;
 }
 
 export function getRate(hitsAndTotals) {

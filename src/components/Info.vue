@@ -6,7 +6,14 @@ const props = defineProps({ timestamp: String })
 <template>
   <div class="info-section">
     <div class="info-header">
-      <h1 class="info-title">{{$route.params.fileName || $route.params.moduleName || store.metadata.repo?.split("/").pop() || 'Overview'}}</h1>
+      <h1 class="info-title">
+        <span>
+          <img src="../assets/file.svg" v-if="$route.params.fileName"/>
+          <img src="../assets/module.svg" v-else-if="$route.params.moduleName"/>
+          <img src="../assets/repo.svg" v-else-if="store.metadata.repo"/>
+        </span>
+      {{$route.params.fileName || $route.params.moduleName || store.metadata.repo?.split("/").pop() || 'Overview'}}
+      </h1>
       <div class="info-metadata">
         <span class="metadata-item">Test timestamp: {{ timestamp ? (new Date(timestamp)).toLocaleString('sv') : '?' }}</span>
       </div>
@@ -46,5 +53,9 @@ const props = defineProps({ timestamp: String })
 .metadata-item {
   color: var(--text-muted);
   font-size: 0.875rem;
+}
+.info-title span img {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 </style>

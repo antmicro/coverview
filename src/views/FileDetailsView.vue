@@ -28,8 +28,10 @@ let lines = computed(() => Array.from(
     .map(i => {
       const coverageData = {};
       for (const type of Object.keys(store.types)) {
-        const line = file.value.coverage[type]?.lines[i+1];
-        if (line) coverageData[type] = countCoverageForLine(line);
+        if (store.types[type].visibility) {
+          const line = file.value.coverage[type]?.lines[i+1];
+          if (line) coverageData[type] = countCoverageForLine(line);
+        }
       }
       const lineData = { n: i+1, coverageData, color: getColor(coverageData) };
       if (source) lineData.source = source[i];
