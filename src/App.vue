@@ -19,11 +19,12 @@ async function load() {
         const fetchedFiles = await fetch(fetchData).then(res => res.blob());
         const unzipped = await decompress(fetchedFiles);
         originalFiles = unzipped;
+        store.files = originalFiles;
         loadData(originalFiles);
       }
     }
   }
-  }
+}
 
 load()
 
