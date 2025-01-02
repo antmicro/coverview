@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   class="svg-icon"
+   style="width: 1em; height: 1em;vertical-align: middle;fill: currentColor;overflow: hidden;"
+   viewBox="0 0 1024 1024"
+   version="1.1"
+   id="svg4"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs8" />
+  <path
+     d="M298.666667 469.333333v85.333334h426.666666v-85.333334H298.666667zM512 85.333333C276.266667 85.333333 85.333333 276.266667 85.333333 512s190.933333 426.666667 426.666667 426.666667 426.666667-190.933333 426.666667-426.666667S747.733333 85.333333 512 85.333333z m0 768c-188.16 0-341.333333-153.173333-341.333333-341.333333S323.84 170.666667 512 170.666667s341.333333 153.173333 341.333333 341.333333-153.173333 341.333333-341.333333 341.333333z"
+     id="path2"
+     style="fill:#d4d4d4;fill-opacity:1" />
+</svg>

@@ -52,10 +52,30 @@ const toggleDetails = (line, type) => {
       <tbody>
         <template v-for="line in lines" :key="line.n">
         <tr>
-          <td style="vertical-align: top;">{{ line.n }}</td>
-          <td v-for="type in Object.keys(store.types)" :class="line.color" style="vertical-align: top;"><span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span><span style="padding-left: 5px; cursor: pointer" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">{{ line.showDetails.value === type ? '[-]' : '[+]' }}</span></td>
-          <td :class="line.color" style="color: #52525B;">:</td>
-          <td class="break" :class="line.color">{{ source ? line.source : 'NO LINE SOURCE AVAILABLE' }}<div v-if="line.showDetails.value !== ''"><div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups"><div v-for="datapoint in g" :class="datapoint.value < 1 ? 'red' : 'green'">{{ `${datapoint.info}: ${datapoint.value}` }}</div></div></div></td>
+          <td>{{ line.n }}</td>
+          <td v-for="type in Object.keys(store.types)">
+            <span :class="`${line.color} padded`">
+              <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span>
+              <span style="padding-left: 5px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">
+                  <img v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse">
+                  <img v-else src="../assets/plus.svg" alt="expand">
+              </span>
+            </span>
+            <div v-if="type === 'toggle' && line.showDetails.value !== ''">
+              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups">
+                <div v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} 'datapoint'`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
+              </div>
+            </div>
+          </td>
+          <td style="color: #52525B;"><span :class="`${line.color} padded`">:</span></td>
+          <td class="break">
+            <span :class="`${line.color} padded`">{{ source ? line.source : 'NO LINE SOURCE AVAILABLE' }}</span>
+            <div v-if="line.showDetails.value !== ''">
+              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups">
+                <div v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} 'datapoint'`" style="padding: 0rem 0.5rem;">{{ datapoint.info }}</div>
+              </div>
+            </div>
+          </td>
         </tr>
       </template>
       </tbody>
@@ -73,16 +93,26 @@ th {
   color: #A1A1AA;
 }
 
-th, td {
-  padding: 0.3rem;
+th, td:not(:has(.padded)), .padded {
   white-space: pre-wrap;
+  height: 28px;
+  padding: 0rem 0.3rem;
 }
 td.break {
   word-break: break-all;
 }
 
+td {
+   vertical-align: top;
+}
+
 td:first-of-type {
   color: #71717A;
+}
+
+.padded {
+  display: flex;
+  align-items: center;
 }
 
 .green {
@@ -96,4 +126,8 @@ td:first-of-type {
 .yellow {
   background: #854d0e;
 }
+
+.datapoint:first-of-type {
+  padding-top: 0.5rem;
+ }
 </style>
