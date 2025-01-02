@@ -58,7 +58,7 @@ const default_links = {
 
 <style>
 .page-wrapper {
-  padding: 3rem;
+  padding: 0rem 3rem 3rem;
   width: 100%;
   max-width: 100vw;
 }

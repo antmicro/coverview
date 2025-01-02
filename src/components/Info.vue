@@ -24,9 +24,13 @@ const props = defineProps({ timestamp: String })
 
 <style>
 .info-section {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-primary);
   display: flex;
   margin-bottom: 2rem;
-  padding-bottom: 2rem;
+  padding: 3rem 0rem 2rem;
   border-bottom: 1px solid var(--border-primary);
 }
 
