@@ -19,6 +19,11 @@ const router = createRouter({
       component: TreeView,
     },
     {
+      path: "/burndown",
+      component: ListView,
+      props: { burndown: true }
+    },
+    {
       path: "/:moduleName/:fileName",
       component: FileDetailsView,
     }

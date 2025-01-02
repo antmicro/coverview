@@ -5,15 +5,38 @@ import { useRoute } from 'vue-router';
 import { computed } from 'vue';
 import router from '../router/index.js';
 
+const props = defineProps({ burndown: Boolean });
+
 let route = useRoute();
 
 let tableData = computed(() => {
   let td = [];
   if (!route.params.moduleName) {
-    td = Object.entries(store.modules).map(([module, _]) => ({
-      source: module,
-      data: getCoverage(decodeURIComponent(module), null)
-    }));
+    if (props.burndown) {
+      for (let moduleName of Object.keys(store.modules)) {
+        for (let fileName of Object.keys(store.modules[moduleName].files)) {
+          td.push({
+            source: encodeURIComponent(moduleName) + '/' + fileName,
+            data: getCoverage(moduleName, fileName)
+          })
+        }
+      }
+      const countMisses = x => {
+        let misses = 0;
+        for (let t of Object.values(x.data)) {
+          misses += t.total - t.hits;
+        }
+        return misses;
+      }
+      // sort by number of misses, descending
+      return td.sort((a,b) => countMisses(b) - countMisses(a));
+    }
+    else {
+      td = Object.entries(store.modules).map(([module, _]) => ({
+        source: module,
+        data: getCoverage(decodeURIComponent(module), null)
+      }));
+    }
   } else {
     const moduleName = decodeURIComponent(route.params.moduleName);
     if (!(moduleName in store.modules)) return [];
@@ -22,6 +45,7 @@ let tableData = computed(() => {
       data: getCoverage(moduleName, fileName)
     }));
   }
+  // sort alphabetically
   return td.sort((a,b) => { return a.source.localeCompare(b.source) });
 });
 
@@ -45,12 +69,14 @@ const sortedData = computed(() => tableData.sort((a, b) => {
 }*/
 
 const buildRoute = (target) => {
-  return (route.params.moduleName ? encodeURIComponent(route.params.moduleName) + '/' : '') + encodeURIComponent(target);
+  if (props.burndown) {
+    return target;
+  }
+  else {
+    return (route.params.moduleName ? encodeURIComponent(route.params.moduleName) + '/' : '') + encodeURIComponent(target);
+  }
 }
 
-function navigate(target) {
-  router.push(buildRoute(target));
-}
 </script>
 
 <template>
@@ -79,11 +105,11 @@ function navigate(target) {
         </tr>
       </thead>
       <tbody>
-        <tr class="link" @click="navigate(item.source)" v-for="item in tableData" :key="item.source">
+        <tr class="link" @click="router.push(buildRoute(item.source))" v-for="item in tableData" :key="item.source">
           <td class="name">
-            <img v-if="$route.params.moduleName" src="../assets/file.svg" alt="file" />
+            <img v-if="$route.params.moduleName || burndown" src="../assets/file.svg" alt="file" />
             <img v-else src="../assets/module.svg" alt="module" />
-            {{ item.source }}
+            {{ decodeURIComponent(item.source) }}
           </td>
           <template v-for="name in Object.keys(store.types)">
             <td class="rate-cell">
