@@ -55,7 +55,7 @@ const toggleDetails = (line, type) => {
           <td style="vertical-align: top;">{{ line.n }}</td>
           <td v-for="type in Object.keys(store.types)" :class="line.color" style="vertical-align: top;"><span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span><span style="padding-left: 5px; cursor: pointer" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">{{ line.showDetails.value === type ? '[-]' : '[+]' }}</span></td>
           <td :class="line.color" style="color: #52525B;">:</td>
-          <td class="break" :class="line.color">{{ source ? line.source : 'NO LINE SOURCE AVAILABLE' }}<div v-if="line.showDetails.value !== ''"><div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups"><div v-for="datapoint in g">{{ `${datapoint.info}: ${datapoint.value}` }}</div></div></div></td>
+          <td class="break" :class="line.color">{{ source ? line.source : 'NO LINE SOURCE AVAILABLE' }}<div v-if="line.showDetails.value !== ''"><div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups"><div v-for="datapoint in g" :class="datapoint.value < 1 ? 'red' : 'green'">{{ `${datapoint.info}: ${datapoint.value}` }}</div></div></div></td>
         </tr>
       </template>
       </tbody>
