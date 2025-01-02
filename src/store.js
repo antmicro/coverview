@@ -169,6 +169,11 @@ export function loadData(inputFiles) {
 
   store.modules = modules;
   store.metadata = metadata;
+  if (metadata) {
+      if (metadata.additional) {
+         store.metadata._additional = JSON.stringify(store.metadata.additional, null, '  ');
+      }
+  }
 }
 
 export function getRateColor(rate, muted=false, grayscale=false) {

@@ -49,7 +49,7 @@ async function onFileUpload(event) {
         <div class="nav-right">
           <span class="info-item date">
             <img src="../assets/date.svg" alt="Date icon" />
-            <span class="info-text">{{ date ? (new Date(date)).toLocaleDateString('sv') : '?' }}</span>
+            <span class="info-text">{{ date ? ((new Date(date)).toLocaleDateString('sv') + ' ' + (new Date(date)).toLocaleTimeString('sv')) : '?' }}</span>
           </span>
           <span class="info-item repo">
             <img src="../assets/repo.svg" alt="Repo icon" />
@@ -63,6 +63,9 @@ async function onFileUpload(event) {
           <span class="info-item commit">
             <img src="../assets/commit.svg" alt="Commit icon" />
             <span class="info-text commit">{{ commit.substring(0, 8) }}</span>
+          </span>
+          <span class="info-item metadata" v-if="store?.metadata?._additional">
+            <img src="../assets/fingerprint.svg" alt="Metadata icon" :title="store.metadata._additional" />
           </span>
         </div>
       </div>
