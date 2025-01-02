@@ -52,17 +52,17 @@ const toggleDetails = (line, type) => {
       <tbody>
         <template v-for="line in lines" :key="line.n">
         <tr>
-          <td>{{ line.n }}</td>
+          <td style="vertical-align:middle">{{ line.n }}</td>
           <td v-for="type in Object.keys(store.types)">
             <span :class="`${line.color} padded`">
-              <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span>
-              <span style="padding-left: 5px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">
-                  <img v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse">
-                  <img v-else src="../assets/plus.svg" alt="expand">
+              <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">
+                  <img v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
+                  <img v-else src="../assets/plus.svg" alt="expand"/>
               </span>
+              <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span>
             </span>
             <div v-if="type === 'toggle' && line.showDetails.value !== ''">
-              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups">
+              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px;">
                 <div v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} 'datapoint'`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
               </div>
             </div>
