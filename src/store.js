@@ -67,6 +67,7 @@ function countCoverageForFile(file, type) {
 
 export function loadData(inputFiles) {
   let config = {};
+  let visibility = {};
   try {
     const configFile = inputFiles['config.json'];
     if (!configFile) {
@@ -76,6 +77,7 @@ export function loadData(inputFiles) {
     if (!(config?.datasets) || Object.keys(config.datasets).length < 1) {
       throw new Error('The config is malformed, does not contain a "datasets" field with at least one dataset.');
     }
+    for (const type of Object.keys(store.types)) visibility[type] = store.types[type].visibility; // store previous visibility
   }
   catch (e) {
     store.types = {};
@@ -83,7 +85,6 @@ export function loadData(inputFiles) {
     console.error(e);
     return;
   }
-
   const sources = {};
   const sourcesFile = inputFiles['sources.txt'];
   if (sourcesFile) {
@@ -153,7 +154,7 @@ export function loadData(inputFiles) {
 
   // count coverages for modules; for files it's trivial to count on the fly, total is also trivial once you have modules
   for (const type of types) {
-    store.types[type] = { visibility: true };
+    store.types[type] = { visibility: (visibility.hasOwnProperty(type) ? visibility[type] : true) };
     for (const [name, m] of Object.entries(modules)) {
       let hits = 0;
       let total = 0;
