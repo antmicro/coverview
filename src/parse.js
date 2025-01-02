@@ -11,9 +11,9 @@ function parseInfo(content) {
     else if (split[0] == "DA") {
       const [line, value] = split[1].split(',');
       if (!(line in curr.lines)) {
-        curr.lines[line] = {};
+        curr.lines[line] = { value: 0 };
       }
-      curr.lines[line].value = parseInt(value);
+      curr.lines[line].value += parseInt(value);
     }
     else if (split[0] == "BRDA") {
       const [line, group, info, value] = split[1].split(',');
