@@ -52,7 +52,7 @@ const toggleDetails = (line, type) => {
       <tbody>
         <template v-for="line in lines" :key="line.n">
         <tr>
-          <td style="vertical-align:middle">{{ line.n }}</td>
+          <td>{{ line.n }}</td>
           <td v-for="type in Object.keys(store.types)">
             <span :class="`${line.color} padded`">
               <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">
@@ -95,7 +95,6 @@ th {
 
 th, td:not(:has(.padded)), .padded {
   white-space: pre-wrap;
-  height: 28px;
   padding: 0rem 0.3rem;
 }
 td.break {
