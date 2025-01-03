@@ -76,7 +76,7 @@ onMounted(() => {
               </span>
               <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span>
             </span>
-            <div v-if="type === 'toggle' && line.showDetails.value !== ''">
+            <div v-if="line.showDetails.value === type">
               <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px;">
                 <div v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} 'datapoint'`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
               </div>
