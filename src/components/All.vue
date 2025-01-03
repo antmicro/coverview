@@ -58,9 +58,27 @@ const default_links = {
 
 <style>
 .page-wrapper {
-  padding: 0rem 3rem 3rem;
+  padding: 0rem 0.75rem 0.75rem;
   width: 100%;
   max-width: 100vw;
+}
+
+@media (min-width: 640px) {
+  .page-wrapper {
+    padding: 0rem 1rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-wrapper {
+    padding: 0rem 2rem 2rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .page-wrapper {
+    padding: 0rem 3rem 3rem;
+  }
 }
 
 .app-container {

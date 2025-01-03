@@ -1,7 +1,7 @@
 <script setup>
 import { useRoute } from "vue-router";
 import { store, countCoverageForLine } from '../store.js';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 
 const params = useRoute().params;
 const file = computed(() => store.modules[params.moduleName].files[params.fileName]);
@@ -42,10 +42,25 @@ const toggleDetails = (line, type) => {
   line.showDetails.value = (line.showDetails.value === type) ? '' : type;
 }
 
+onMounted(() => {
+  const main = document.querySelector('main');
+  const scrollbar = document.querySelector('.sticky-scrollbar');
+  
+  if (main && scrollbar) {
+    const updateWidth = () => scrollbar.style.setProperty('--scroll-width', `${main.scrollWidth - main.clientWidth}px`);
+    const syncScroll = (e) => e.target === main ? scrollbar.scrollLeft = main.scrollLeft : main.scrollLeft = scrollbar.scrollLeft;
+    
+    updateWidth();
+    main.addEventListener('scroll', syncScroll);
+    scrollbar.addEventListener('scroll', syncScroll);
+    new ResizeObserver(updateWidth).observe(main);
+  }
+});
 </script>
 
 <template>
-  <main>
+  <div class="wrapper">
+    <main>
     <div v-if="lines.length == 0">NO COVERAGE / SOURCE DATA FOR THIS FILE IS AVAILABLE.</div>
     <table v-if="lines.length != 0">
       <thead><tr><th></th><th v-for="name in Object.keys(store.types)">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
@@ -80,10 +95,79 @@ const toggleDetails = (line, type) => {
       </template>
       </tbody>
     </table>
-  </main>
+    </main>
+    <div class="sticky-scrollbar"></div>
+  </div>
 </template>
 
 <style scoped>
+.wrapper {
+  position: relative;
+  width: 100%;
+}
+
+main {
+  max-width: 100%;
+}
+
+th, td:not(:has(.padded)), .padded {
+  padding: 0rem 0.3rem;
+}
+
+@media (min-width: 1280px) {
+  main {
+    overflow: visible;
+  }
+  
+  table {
+    white-space: pre-wrap;
+    width: 100%;
+  }
+  
+  .sticky-scrollbar {
+    display: none;
+  }
+  
+  td.break {
+    word-break: break-all;
+  }
+}
+
+@media (max-width: 1279px) {
+  main {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  main::-webkit-scrollbar {
+    display: none;
+  }
+  
+  table {
+    table-layout: fixed;
+    white-space: nowrap;
+    width: max-content;
+  }
+  
+  .sticky-scrollbar {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    height: 17px;
+    overflow: auto hidden;
+    z-index: 2;
+    background: var(--bg-primary);
+  }
+
+  .sticky-scrollbar::before {
+    content: '';
+    display: block;
+    width: calc(100% + var(--scroll-width, 0px));
+    height: 1px;
+  }
+}
 table {
   font-family: monospace;
   font-size: 0.8rem;
