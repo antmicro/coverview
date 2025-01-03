@@ -27,12 +27,6 @@ async function load() {
 
 await load()
 
-function reset() {
-  store.modules = {};
-  store.loadedFromFile = false;
-  router.go();
-}
-
 const default_links = {
   "Coverview": "https://github.com/antmicro/coverview"
 }
@@ -42,7 +36,6 @@ const default_links = {
 <template>
   <div class="app-container">
     <div class="content">
-      <div class="reset" v-if="store.loadedFromFile" @click="reset">Data from file. Click here to reset.</div>
       <!-- those props should be read from some input file -->
       <Header :date="store.metadata.timestamp" :logo="store.metadata.logo || ''" :title="store.metadata.title || 'Dashboard'" :commit="store.metadata.commit || '?'" :branch="store.metadata.branch || '?'" :repo="store.metadata.repo || '?'"/>
       <div class="page-wrapper">
@@ -89,10 +82,6 @@ const default_links = {
 
 .content {
   flex: 1 0 auto;
-}
-
-.reset {
-  text-align: center;
 }
 
 footer {

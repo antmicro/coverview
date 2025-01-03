@@ -30,6 +30,12 @@ async function onFileUpload(event) {
   loadData(store.files);
   router.push('/');
 };
+
+function reset() {
+  store.modules = {};
+  store.loadedFromFile = false;
+  router.go();
+}
 </script>
 
 <template>
@@ -42,7 +48,13 @@ async function onFileUpload(event) {
           </a>
           <span class="path-text">{{ title }}</span>
         </div>
-        <input v-if="showFilePicker" type="file" name="file" id="fileInput" accept=".zip" @change="onFileUpload($event)">
+        <div class="file-input-holder">
+          <label v-if="showFilePicker" for="fileInput" class="file-input">
+            <img src="../assets/upload.svg" alt="upload">
+            <input type="file" id="fileInput" accept=".zip" @change="onFileUpload($event)">
+          </label>
+          <button class="reset" v-if="store.loadedFromFile" @click="reset"><img src="../assets/block.svg"></button>
+        </div>
         <select v-if="Object.keys(store?.metadata?.datasets || []).length > 1" @change="onDatasetChange($event)" :value="store.selected_dataset">
           <option v-for="dataset in Object.keys(store.metadata.datasets)" :value="dataset">{{ dataset }}</option>
         </select>
@@ -108,6 +120,29 @@ async function onFileUpload(event) {
   align-items: center;
   gap: 1rem;
   min-width: 200px;
+}
+
+.file-input-holder {
+  display: flex;
+  gap: 1rem;
+}
+
+.file-input, .reset {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+:is(.file-input, .reset):hover {
+  cursor: pointer;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.reset {
+  background: none;
+  border: none;
 }
 
 .logo {
