@@ -76,7 +76,7 @@ th.visibility > div > img {
 
 @media (min-width: 1024px) {
   th, td {
-    padding: 12px 30px;
+    padding: 0.75rem 1.875rem;
   }
   
   .summary-table {
