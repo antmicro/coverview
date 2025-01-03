@@ -12,7 +12,7 @@ const props = defineProps({ timestamp: String })
           <img src="../assets/module.svg" v-else-if="$route.params.moduleName"/>
           <img src="../assets/repo.svg" v-else-if="store.metadata.repo"/>
         </span>
-      {{$route.params.fileName || $route.params.moduleName || store.metadata.repo?.split("/").pop() || 'Overview'}}
+        {{$route.params.fileName || $route.params.moduleName || store.metadata.repo?.split("/").pop() || 'Overview'}}
       </h1>
       <div class="info-metadata">
         <span class="metadata-item">Test timestamp: {{ timestamp ? (new Date(timestamp)).toLocaleString('sv') : '?' }}</span>
@@ -35,7 +35,7 @@ const props = defineProps({ timestamp: String })
 }
 
 .info-header {
-  flex: 1;
+  width: 80%;
   display: flex;
   margin-bottom: 2rem;
   flex-direction: column;
@@ -58,8 +58,42 @@ const props = defineProps({ timestamp: String })
   color: var(--text-muted);
   font-size: 0.875rem;
 }
+
 .info-title span img {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .info-section {
+    flex-direction: column;
+    padding: 1.5rem 0.75rem 1rem;
+  }
+
+  .info-header {
+    margin-bottom: 1rem;
+  }
+
+  .info-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .info-section {
+    padding: 2rem 1rem 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .info-section {
+    padding: 3rem 2rem 2rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .info-section {
+    padding: 3rem 3rem 2rem;
+  }
 }
 </style>

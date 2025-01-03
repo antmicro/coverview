@@ -141,10 +141,6 @@ async function onFileUpload(event) {
 }
 
 @media (max-width: 768px) {
-  .navbar {
-    padding: 0.75rem;
-  }
-
   .nav-left {
     min-width: auto;
   }
@@ -211,6 +207,7 @@ li > img {
 
   .nav-right {
     gap: 0.5rem;
+    flex-wrap: wrap;
   }
 }
 </style>

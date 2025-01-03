@@ -35,21 +35,21 @@ let coverage_summaries = computed(() => getCoverage(props.module, props.file));
 
 <style scoped>
 .coverage-summary {
-  flex: 1;
   overflow: hidden;
+  width: 100%;
 }
 
 .summary-table {
   float: right;
+  border-collapse: collapse;
 }
 
 .summary-table, th, td {
-  border-collapse: collapse;
   border: 1px solid var(--border-primary);
 }
 
 th, td {
-  padding: 12px 30px;
+  padding: 0.5rem;
   text-align: center;
 }
 
@@ -63,8 +63,36 @@ th.visibility > div {
 }
 
 th.visibility > div > img {
-  width:1.25rem;
-  height:1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
   cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  th, td {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  th, td {
+    padding: 12px 30px;
+  }
+  
+  .summary-table {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .summary-table {
+    float: none;
+    width: 100%;
+    font-size: 0.875rem;
+  }
+  
+  th {
+    font-size: 0.75rem;
+  }
 }
 </style>
