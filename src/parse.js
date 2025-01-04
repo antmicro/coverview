@@ -36,12 +36,12 @@ function parseInfo(filename, content, data = {}, enhance = false) {
       const val = parseInt(value);
       if (enhance) {
         if (info in curr.lines[line].groups[group]) {
-          curr.lines[line].groups[group][info][source].add(filename);
+          curr.lines[line].groups[group][info].source.add(filename);
           if (val > 0) curr.lines[line].groups[group][info].value = val;
           continue;
         }
       }
-      curr.lines[line].groups[group][info] = { value: val, source: new Set()};
+      curr.lines[line].groups[group][info] = { value: val, source: new Set() };
       curr.lines[line].groups[group][info].source.add(filename);
     }
   }
