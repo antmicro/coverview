@@ -16,7 +16,7 @@ export function getCoverage(module, file) {
     const fileObject = toRaw(store.modules)[module].files[file];
     const coverage = {};
     for (const type of Object.keys(store.types)) {
-        coverage[type] = countCoverageForFile(fileObject, type);
+      coverage[type] = countCoverageForFile(fileObject, type);
     }
     return coverage;
   } else if (module) {
@@ -41,8 +41,9 @@ export function countCoverageForLine(line) { // type not needed, since we're in 
   if (line.groups) {
     // if there are groups in this line, count fields and the values
     for (const g of Object.values(line.groups)) {
-      ret.hits += g.filter(x => x.value > 0).length;
-      ret.total += g.length;
+      let bits = Object.values(g);
+      ret.hits += bits.filter(x => x.value > 0).length;
+      ret.total += bits.length;
     }
   } else {
     ret.hits = (line.value > 0) ? 1 : 0;
@@ -73,11 +74,20 @@ export function loadData(inputFiles, enhance = {}) {
   try {
     const configFile = inputFiles['config.json'];
     if (!configFile) {
-      throw new Error('The archive does not have a config.json file, no data will be loaded.');
+      console.log('No config file found. Will put all .info files into one generic coverage type.');
+      config = {
+        "datasets": {
+          "dataset1": {
+            "coverage": Object.keys(inputFiles).filter(x => x.includes('.info'))
+          }
+        }
+      }
     }
-    config = JSON.parse(configFile);
-    if (!(config?.datasets) || Object.keys(config.datasets).length < 1) {
-      throw new Error('The config is malformed, does not contain a "datasets" field with at least one dataset.');
+    else {
+      config = JSON.parse(configFile);
+      if (!(config?.datasets) || Object.keys(config.datasets).length < 1) {
+        throw new Error('The config is malformed, does not contain a "datasets" field with at least one dataset.');
+      }
     }
   }
   catch (e) {
@@ -99,7 +109,7 @@ export function loadData(inputFiles, enhance = {}) {
   }
 
   if (!(store.selected_dataset in config.datasets)) {
-    const firstDataset = Object.keys(config.datasets)[0]
+    const firstDataset = Object.keys(config.datasets)[0];
     store.selected_dataset = firstDataset;
     sessionStorage.setItem("dataset", firstDataset);
   }
@@ -111,14 +121,17 @@ export function loadData(inputFiles, enhance = {}) {
 
   const coverage = {};
   for (let [k, v] of Object.entries(layout)) {
-    if (!inputFiles[v]) {
-      console.error(`file ${v} was not loaded! Check if it's in the package.`);
-      return;
+    const infoFiles = (Array.isArray(v)) ? v : [v]; // if one file, make it into array of 1
+    for (let i = 0; i < infoFiles.length ; i++) {
+      if (!inputFiles[infoFiles[i]]) {
+        console.error(`file ${infoFiles[i]} was not loaded! Check if it's in the package.`);
+        return;
+      }
+      coverage[k] = (i == 0) ? parseInfo(infoFiles[i], inputFiles[infoFiles[i]]) : parseInfo(infoFiles[i], inputFiles[infoFiles[i]], coverage[k], true);
     }
-    coverage[k] = parseInfo(inputFiles[v]);
   }
-  for (const [type, content] of Object.entries(enhance)) {
-    coverage[type] = parseInfo(content, coverage[type], true);
+  for (const [type, file] of Object.entries(enhance)) {
+    coverage[type] = parseInfo(file.name, file.content, coverage[type], true);
   }
 
   const filenames = Array.from(
@@ -167,7 +180,6 @@ export function loadData(inputFiles, enhance = {}) {
     }
   }
 
-  store.coverage = coverage; // remember this for enhancing
   store.modules = modules;
   store.metadata = metadata;
   if (metadata) {

@@ -78,7 +78,7 @@ onMounted(() => {
             </span>
             <div v-if="line.showDetails.value === type">
               <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px;">
-                <div v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} 'datapoint'`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
+                <div :title="[...datapoint.source].join(' ')" v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
               </div>
             </div>
           </td>
@@ -87,7 +87,7 @@ onMounted(() => {
             <span :class="`${line.color} padded`">{{ source ? line.source : 'NO LINE SOURCE AVAILABLE' }}</span>
             <div v-if="line.showDetails.value !== ''">
               <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups">
-                <div v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} 'datapoint'`" style="padding: 0rem 0.5rem;">{{ datapoint.info }}</div>
+                <div v-for="(datapoint, info) in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
               </div>
             </div>
           </td>

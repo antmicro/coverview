@@ -24,7 +24,7 @@ async function onInfoFileUpload(event) {
       reader.readAsText(file);
     });
   const enhance = {};
-  enhance[chosenType] = await p;
+  enhance[chosenType] = { name: file.name, content: await p };
   loadData(store.files, enhance);
 }
 
@@ -37,6 +37,7 @@ async function onInfoFileUpload(event) {
             <tr>
                 <th></th>
                 <th></th>
+                <th>Type</th>
                 <th>Coverage</th>
                 <th>Hit</th>
                 <th>Total</th>
@@ -58,7 +59,6 @@ async function onInfoFileUpload(event) {
 
 <style scoped>
 .coverage-summary {
-  overflow: hidden;
   width: 100%;
 }
 
