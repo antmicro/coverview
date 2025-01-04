@@ -73,7 +73,7 @@ function reset() {
         <div class="file-input-holder">
           <label v-if="showFilePicker" for="fileInput" class="file-input">
             <img src="../assets/upload.svg" alt="upload">
-            <input type="file" id="fileInput" accept=".zip" @change="onFileUpload($event)">
+            <input type="file" id="fileInput" accept=".zip, .info" @change="onFileUpload($event)">
           </label>
           <button class="reset" v-if="store.loadedFromFile" @click="reset"><img src="../assets/block.svg"></button>
         </div>
