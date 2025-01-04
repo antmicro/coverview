@@ -64,10 +64,12 @@ function countCoverageForFile(file, type) {
   return ret;
 }
 
-
-export function loadData(inputFiles) {
+export function loadData(inputFiles, enhance = {}) {
   let config = {};
   let visibility = {};
+  for (const type of Object.keys(store.types)) visibility[type] = store.types[type].visibility; // store previous visibility
+  store.types = {};
+  store.modules = {};
   try {
     const configFile = inputFiles['config.json'];
     if (!configFile) {
@@ -77,11 +79,8 @@ export function loadData(inputFiles) {
     if (!(config?.datasets) || Object.keys(config.datasets).length < 1) {
       throw new Error('The config is malformed, does not contain a "datasets" field with at least one dataset.');
     }
-    for (const type of Object.keys(store.types)) visibility[type] = store.types[type].visibility; // store previous visibility
   }
   catch (e) {
-    store.types = {};
-    store.modules = {};
     console.error(e);
     return;
   }
@@ -91,10 +90,10 @@ export function loadData(inputFiles) {
     const split = sourcesFile.split('### FILE: ');
     if (split.length > 1) {
         for (let i = 1; i < split.length; i++) {
-            const nameContent = split[i].split('\n');
-            const name = nameContent.shift();
-            const content = nameContent.join('\n')
-            sources[name] = content;
+          const nameContent = split[i].split('\n');
+          const name = nameContent.shift();
+          const content = nameContent.join('\n')
+          sources[name] = content;
         }
     }
   }
@@ -113,12 +112,13 @@ export function loadData(inputFiles) {
   const coverage = {};
   for (let [k, v] of Object.entries(layout)) {
     if (!inputFiles[v]) {
-      store.types = {};
-      store.modules = {};
       console.error(`file ${v} was not loaded! Check if it's in the package.`);
       return;
     }
     coverage[k] = parseInfo(inputFiles[v]);
+  }
+  for (const [type, content] of Object.entries(enhance)) {
+    coverage[type] = parseInfo(content, coverage[type], true);
   }
 
   const filenames = Array.from(
@@ -145,7 +145,7 @@ export function loadData(inputFiles) {
         files: Object.fromEntries(
           Object.entries(files)
             .filter(([k,_]) => k.split("/").slice(0, -1).join("/") === name)
-            .map(([k,v]) => [k.split("/").at(-1), { ...v, contents: null }]),
+            .map(([k,v]) => [k.split("/").at(-1), v]),
         ),
         coverage: {}
       },
@@ -167,35 +167,36 @@ export function loadData(inputFiles) {
     }
   }
 
+  store.coverage = coverage; // remember this for enhancing
   store.modules = modules;
   store.metadata = metadata;
   if (metadata) {
-      if (metadata.additional) {
-         store.metadata._additional = JSON.stringify(store.metadata.additional, null, '  ');
-      }
+    if (metadata.additional) {
+     store.metadata._additional = JSON.stringify(store.metadata.additional, null, '  ');
+    }
   }
 }
 
 export function getRateColor(rate, muted=false, grayscale=false) {
   let color = muted ? "#991b1b" : "#ef4444"; // red
   if (rate == 'N/A') {
-      color = muted ? "#262626" : "#737373"; // neutral
+    color = muted ? "#262626" : "#737373"; // neutral
   } else if (rate >= 80) {
-      color = muted ? "#166534" : "#22c55e"; // green
+    color = muted ? "#166534" : "#22c55e"; // green
   } else if (rate >= 60) {
-      color = muted ? "#854d0e" : "#eab308"; // yellow
+    color = muted ? "#854d0e" : "#eab308"; // yellow
   } else if (rate >= 1) {
-      color = muted ? "#9a3412" : "#f97316"; // orange
+    color = muted ? "#9a3412" : "#f97316"; // orange
   }
   if (grayscale) {
-      let red = parseInt(color.substring(1,3),16);
-      let green = parseInt(color.substring(3,5),16);
-      let blue =  parseInt(color.substring(5,7),16);
-      let gray = Math.round(0.299 * red + 0.587 * green + 0.114 * blue);
-      if (gray > 255) gray = 255;
-      let gray_s = gray.toString(16);
-      if (gray_s.length == 1) gray_s = "0" + gray_s;
-      color = "#" + gray_s + gray_s + gray_s; 
+    let red = parseInt(color.substring(1,3),16);
+    let green = parseInt(color.substring(3,5),16);
+    let blue =  parseInt(color.substring(5,7),16);
+    let gray = Math.round(0.299 * red + 0.587 * green + 0.114 * blue);
+    if (gray > 255) gray = 255;
+    let gray_s = gray.toString(16);
+    if (gray_s.length == 1) gray_s = "0" + gray_s;
+    color = "#" + gray_s + gray_s + gray_s;
   }
   return color;
 }

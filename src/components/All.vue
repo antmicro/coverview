@@ -3,7 +3,6 @@ import { RouterView } from "vue-router";
 import Header from "./Header.vue";
 import Footer from "./Footer.vue";
 import { loadData, store, decompress } from "../store.js";
-import { onMounted } from "vue";
 import router from "../router/index.js";
 import Info from "./Info.vue";
 async function load() {

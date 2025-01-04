@@ -19,12 +19,34 @@ function onDatasetChange(event) {
 }
 
 async function onFileUpload(event) {
-  const zipFile = event.target.files[0];
-  if (!zipFile) {
+  const file = event.target.files[0];
+  if (!file) {
     return;
   }
 
-  store.files = await decompress(zipFile);
+  let ext = file.name.split('.').pop();
+
+  if (ext === 'zip') {
+    store.files = await decompress(file);
+  }
+
+  else {
+    store.files = { };
+
+    let p = new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsText(file);
+    })
+    store.files[file.name] = await p;
+    store.files['config.json'] = JSON.stringify({
+      "datasets": {
+        "dataset1": {
+          'coverage': file.name
+        }
+      }
+    });
+  }
   store.loadedFromFile = true;
   // need to handle "404"
   loadData(store.files);
