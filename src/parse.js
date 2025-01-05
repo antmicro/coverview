@@ -13,19 +13,20 @@ function parseInfo(filename, content, data = {}, enhance = false) {
     }
     else if (split[0] == "DA") {
       const [line, value] = split[1].split(',');
+      const val = parseInt(value);
       if (!(line in curr.lines)) {
-        curr.lines[line] = { value: 0, source: new Set() };
+        curr.lines[line] = { value: 0, source: new Set(), zeroSource: new Set() };
       }
       else if (!(curr.lines[line].value)) {
         curr.lines[line].value = 0;
       }
-      curr.lines[line].value += parseInt(value);
-      curr.lines[line].source.add(filename);
+      curr.lines[line].value += val;
+      val > 0 ? curr.lines[line].source.add(filename) : curr.lines[line].zeroSource.add(filename);
     }
     else if (split[0] == "BRDA") {
       const [line, group, info, value] = split[1].split(',');
       if (!(line in curr.lines)) {
-        curr.lines[line] = { source: new Set() };
+        curr.lines[line] = { source: new Set(), zeroSource: new Set() };
       }
       if (!('groups' in curr.lines[line])) {
         curr.lines[line].groups = {};
@@ -34,15 +35,13 @@ function parseInfo(filename, content, data = {}, enhance = false) {
         curr.lines[line].groups[group] = {};
       }
       const val = parseInt(value);
-      if (enhance) {
-        if (info in curr.lines[line].groups[group]) {
-          curr.lines[line].groups[group][info].source.add(filename);
-          if (val > 0) curr.lines[line].groups[group][info].value = val;
-          continue;
-        }
+      if (!(info in curr.lines[line].groups[group])) {
+        curr.lines[line].groups[group][info] = { value: val, source: new Set(), zeroSource: new Set() };
       }
-      curr.lines[line].groups[group][info] = { value: val, source: new Set() };
-      curr.lines[line].groups[group][info].source.add(filename);
+      else if (enhance && val > 0) {
+        curr.lines[line].groups[group][info].value = val;
+      }
+      val > 0 ? curr.lines[line].groups[group][info].source.add(filename) : curr.lines[line].groups[group][info].zeroSource.add(filename);
     }
   }
   return data;
