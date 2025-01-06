@@ -44,7 +44,7 @@ const default_links = {
       </RouterView>
       </div>
     </div>
-    <Footer :links="store.metadata.links || default_links" logo="logo.svg" copyright="Copyright Antmicro, 2023-2024." />
+    <Footer :links="store.metadata.links || default_links" logo="logo.svg" copyright="Copyright Antmicro, 2023-2025." />
   </div>
 </template>
 
