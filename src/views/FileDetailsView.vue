@@ -22,8 +22,7 @@ function getColor(coverageData) {
   return "yellow";
 }
 
-let lines = computed(() => Array.from(
-  Array(lineCount).keys()
+let lines = computed(() => Array.from(Array(lineCount).keys())
     .map(i => {
       const coverageData = {};
       for (const type of Object.keys(store.types)) {
@@ -35,8 +34,7 @@ let lines = computed(() => Array.from(
       const lineData = { n: i+1, coverageData, color: getColor(coverageData), showDetails: ref('') };
       if (source) lineData.source = source[i];
       return lineData;
- })
-));
+ }));
 
 const toggleDetails = (line, type) => {
   line.showDetails.value = (line.showDetails.value === type) ? '' : type;
