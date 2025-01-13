@@ -14,7 +14,13 @@ async function load() {
         store.files = originalFiles;
         loadData(originalFiles);
       } else if (typeof fetchData !== 'undefined') {
-        const fetchedFiles = await fetch(fetchData).then(res => res.blob());
+        let url = fetchData;
+        if (typeof templatedFetchUrl !== 'undefined') {
+          for (const [key, val] of new URLSearchParams(window.location.search)) {
+            url = templatedFetchUrl.replace(`___${key}___`, val)
+          }
+        }
+        const fetchedFiles = await fetch(url).then(res => res.blob());
         const unzipped = await decompress(fetchedFiles);
         originalFiles = unzipped;
         store.files = originalFiles;

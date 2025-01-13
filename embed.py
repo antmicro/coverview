@@ -8,6 +8,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--inject-data')
 parser.add_argument('--fetch-data')
+parser.add_argument('--template-url')
 args = parser.parse_args()
 
 if (args.inject_data and args.fetch_data):
@@ -40,6 +41,7 @@ with open(index_filename, 'r+') as f:
 
     elif args.fetch_data:
         fetch_snippet = 'let originalFiles = {}; let fetchData = "%s";' % args.fetch_data
+        if args.template_url: fetch_snippet += 'let templatedFetchUrl = "%s";' % args.template_url
         content = content.replace(original_snippet, fetch_snippet)
 
     import re
