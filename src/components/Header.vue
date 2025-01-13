@@ -13,10 +13,6 @@ const props = defineProps({
 
 const showFilePicker = Object.keys(originalFiles).length === 0;
 
-function onDatasetChange(event) {
-  store.selected_dataset = event.target.value;
-  loadData(store.files);
-}
 
 async function onFileUpload(event) {
   const file = event.target.files[0];
@@ -77,9 +73,6 @@ function reset() {
           </label>
           <button class="reset" v-if="store.loadedFromFile" @click="reset"><img src="../assets/block.svg"></button>
         </div>
-        <select v-if="Object.keys(store?.metadata?.datasets || []).length > 1" @change="onDatasetChange($event)" :value="store.selected_dataset">
-          <option v-for="dataset in Object.keys(store.metadata.datasets)" :value="dataset">{{ dataset }}</option>
-        </select>
         <div class="nav-right">
           <span class="info-item date">
             <img src="../assets/date.svg" alt="Date icon" />

@@ -1,19 +1,37 @@
 <script setup>
 import Summary from "../components/Summary.vue";
-import { store } from '../store.js';
-const props = defineProps({ timestamp: String })
+import DropdownSelect from "./DropdownSelect.vue";
+import { store, loadData } from '../store.js';
+
+const props = defineProps({ timestamp: String });
+
+function onDatasetChange(value) {
+  store.selected_dataset = value;
+  sessionStorage.setItem("dataset", value);
+  loadData(store.files);
+}
 </script>
+
 <template>
   <div class="info-section">
     <div class="info-header">
-      <h1 class="info-title">
-        <span>
-          <img src="../assets/file.svg" v-if="$route.params.fileName"/>
-          <img src="../assets/module.svg" v-else-if="$route.params.moduleName"/>
-          <img src="../assets/repo.svg" v-else-if="store.metadata.repo"/>
-        </span>
-        {{$route.params.fileName || $route.params.moduleName || store.metadata.repo?.split("/").pop() || 'Overview'}}
-      </h1>
+      <div class="title-row">
+        <DropdownSelect
+          v-if="Object.keys(store?.metadata?.datasets || {}).length > 1"
+          v-model="store.selected_dataset"
+          :options="Object.keys(store.metadata.datasets)"
+          label="Select dataset"
+          @update:modelValue="onDatasetChange"
+        />
+        <h1 class="info-title">
+          <span>
+            <img src="../assets/file.svg" v-if="$route.params.fileName"/>
+            <img src="../assets/module.svg" v-else-if="$route.params.moduleName"/>
+            <img src="../assets/repo.svg" v-else-if="store.metadata.repo"/>
+          </span>
+          {{$route.params.fileName || $route.params.moduleName || store.metadata.repo?.split("/").pop() || 'Overview'}}
+        </h1>
+      </div>
       <div class="info-metadata">
         <span class="metadata-item">Test timestamp: {{ timestamp ? (new Date(timestamp)).toLocaleString('sv') : '?' }}</span>
       </div>
@@ -40,6 +58,12 @@ const props = defineProps({ timestamp: String })
   margin-bottom: 2rem;
   flex-direction: column;
   justify-content: center;
+}
+
+.title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .info-title {
@@ -72,6 +96,10 @@ const props = defineProps({ timestamp: String })
 
   .info-header {
     margin-bottom: 1rem;
+  }
+
+  .title-row {
+    gap: 0.75rem;
   }
 
   .info-title {
