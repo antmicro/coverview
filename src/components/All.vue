@@ -3,7 +3,6 @@ import { RouterView } from "vue-router";
 import Header from "./Header.vue";
 import Footer from "./Footer.vue";
 import { loadData, store, decompress } from "../store.js";
-import router from "../router/index.js";
 import Info from "./Info.vue";
 async function load() {
   if (Object.keys(store.modules).length === 0) {
@@ -20,8 +19,9 @@ async function load() {
             url = templatedFetchUrl.replace(`___${key}___`, val)
           }
         }
-        const fetchedFiles = await fetch(url).then(res => res.blob());
-        const unzipped = await decompress(fetchedFiles);
+        const ext = url.split('.').pop();
+        const fetchedFiles = await fetch(url).then(res => res.body);
+        const unzipped = await decompress(fetchedFiles, ext);
         originalFiles = unzipped;
         store.files = originalFiles;
         loadData(originalFiles);

@@ -2,6 +2,8 @@ import { reactive, toRaw } from 'vue'
 
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 
+import { XzReadableStream } from 'xzwasm';
+
 export const store = reactive({
   files: {},
   loadedFromFile: false, // data was loaded from file
@@ -217,8 +219,15 @@ export function getRate(hitsAndTotals) {
   return (hitsAndTotals && hitsAndTotals.total > 0) ? parseFloat(((hitsAndTotals.hits/hitsAndTotals.total) * 100).toFixed(1)) : 'N/A';
 }
 
-export async function decompress(zipFile) {
-  const zipFileReader = new BlobReader(await zipFile);
+// takes a ReadableStream - a response.body or file.stream() - and decompresses it
+export async function decompress(archive, extension="zip") {
+  let blob = null;
+  if (extension == "xz") {
+    blob = new Response(new XzReadableStream(archive)).blob();
+  } else {
+    blob = new Response(archive).blob();
+  }
+  const zipFileReader = new BlobReader(await blob);
   const zipReader = new ZipReader(zipFileReader);
   const entries = await zipReader.getEntries();
 
