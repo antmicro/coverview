@@ -13,7 +13,7 @@
     "glob": "^11.0.0",
     "vue": "^3.5.13",
     "vue-router": "^4.4.5",
-    "xzwasm": "^0.1.2"
+    "xz-decompress": "^0.2.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",

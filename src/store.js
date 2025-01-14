@@ -2,7 +2,7 @@ import { reactive, toRaw } from 'vue'
 
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 
-import { XzReadableStream } from 'xzwasm';
+import { XzReadableStream } from 'xz-decompress';
 
 export const store = reactive({
   files: {},
