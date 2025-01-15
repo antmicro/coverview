@@ -1,3 +1,39 @@
+function parseDesc(content, modules, type) {
+  console.log("Loading test description files");
+  const content_lines = content.split('\n');
+  let file = null;
+  for (const cl of content_lines) {
+    const split = cl.split(":");
+    if (split[0] == "SN") {
+      file = split[1];
+    }
+    else if (split[0] == "end_of_record") {
+      file = null;
+    }
+    else if (split[0] == "TEST") {
+      if (!file) {
+        console.log("TEST line outside of a file, ignoring.");
+        continue;
+      }
+      const rest = split[1].split(',');
+      const line = rest[0];
+      const tests =  rest[1].split(";");
+      const spl = file.split('/');
+      const filename = spl.pop();
+      const module = spl.join('/');
+      const lineInModule = modules[module].files[filename].coverage[type].lines[line];
+      if (!lineInModule) {
+        alert(`No such line ${line} in ${module}, maybe you are loading the wrong file for the wrong coverage type/tool?`);
+        return;
+      }
+      lineInModule.source = new Set();
+      for (const t of tests) {
+        lineInModule.source.add(t);
+      }
+    }
+  }
+}
+
 function parseInfo(filename, content, data = {}, enhance = false) {
   console.log("Loading " + filename);
   const content_lines = content.split('\n');
@@ -67,4 +103,4 @@ function serializeInfo(data) {
   return output.join('\n');
 }
 
-export { parseInfo, serializeInfo };
+export { parseInfo, parseDesc, serializeInfo };

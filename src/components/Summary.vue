@@ -2,6 +2,7 @@
 import { getCoverage, getRateColor, getRate } from '../store.js';
 import { computed, ref } from 'vue';
 import { store, loadData } from '../store.js';
+import { parseDesc } from '../parse.js';
 
 const props = defineProps(['module', 'file']);
 
@@ -18,14 +19,19 @@ const loadFile = (inputRef, type) => {
 
 async function onInfoFileUpload(event) {
   const file = event.target.files[0];
-  let p = new Promise((resolve) => {
+  let content = await new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
       reader.readAsText(file);
     });
-  const enhance = {};
-  enhance[chosenType] = { name: file.name, content: await p };
-  loadData(store.files, enhance);
+  const ext = file.name.split('.').pop()
+  if (ext == "info") {
+    const enhance = {};
+    enhance[chosenType] = { name: file.name, content: content };
+    loadData(store.files, enhance);
+  } else { // ext == desc
+    parseDesc(content, store.modules, chosenType);
+  }
 }
 
 </script>
@@ -45,7 +51,7 @@ async function onInfoFileUpload(event) {
             </thead>
             <tbody>
             <tr v-for="[type, summary] in Object.entries(coverage_summaries)">
-              <th class="loader"><input accept=".info" @change="onInfoFileUpload($event)" type="file" :ref="(el) => { refs[type] = el }" :name="'add_' + type"><div @click="loadFile(refs[type], type)"><img src="../assets/add.svg" alt="Load coverage from file" /></div></th>
+              <th class="loader"><input accept=".info, .desc" @change="onInfoFileUpload($event)" type="file" :ref="(el) => { refs[type] = el }" :name="'add_' + type"><div @click="loadFile(refs[type], type)"><img src="../assets/add.svg" alt="Load coverage from file" /></div></th>
               <th class="visibility"><div @click='() => store.types[type].visibility = !store.types[type].visibility'><img src="../assets/visibility.svg" alt="Hide icon" v-if="store.types[type].visibility"/><img src="../assets/visibility-off.svg" alt="Show icon" v-else/></div></th>
                 <th>{{ type }}</th>
                 <td :style="{ backgroundColor: getRateColor(getRate(summary), true, !store.types[type].visibility) }">{{ getRate(summary) }}%</td>

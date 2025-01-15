@@ -5,11 +5,11 @@ import { computed, ref, onMounted } from 'vue';
 
 const params = useRoute().params;
 const file = computed(() => store.modules[params.moduleName].files[params.fileName]);
-const source = file?.value?.source?.split('\n');
+const code = file?.value?.source?.split('\n');
 let lineCount = 0;
 
-if (source) {
-  lineCount = source.length;
+if (code) {
+  lineCount = code.length;
 } else {
   lineCount = Math.max(...(Object.values(file.value.coverage).map(x => Object.keys(x.lines || []).toSorted().at(-1) || 0)));
 }
@@ -25,14 +25,19 @@ function getColor(coverageData) {
 let lines = computed(() => Array.from(Array(lineCount).keys())
     .map(i => {
       const coverageData = {};
+      let hitOrigins = []; // this is a bit hacky, as we only have "line" inside the loop
+      // we use hitOrigins as the tests which hit the line since "source" is confusing
       for (const type of Object.keys(store.types)) {
         if (store.types[type].visibility) {
           const line = file.value.coverage[type]?.lines[i+1];
-          if (line) coverageData[type] = countCoverageForLine(line);
+          if (line) {
+            coverageData[type] = countCoverageForLine(line);
+            hitOrigins = line.source;
+          }
         }
       }
-      const lineData = { n: i+1, coverageData, color: getColor(coverageData), showDetails: ref('') };
-      if (source) lineData.source = source[i];
+      const lineData = { n: i+1, coverageData, color: getColor(coverageData), showDetails: ref(''), hitOrigins };
+      if (code) lineData.code = code[i];
       return lineData;
  }));
 
@@ -72,7 +77,7 @@ onMounted(() => {
                   <img v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
                   <img v-else src="../assets/plus.svg" alt="expand"/>
               </span>
-              <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span>
+              <span :title="[...line.hitOrigins].join(' ')" v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span>
             </span>
             <div v-if="line.showDetails.value === type">
               <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px;">
@@ -82,7 +87,7 @@ onMounted(() => {
           </td>
           <td style="color: #52525B;"><span :class="`${line.color} padded`">:</span></td>
           <td class="break">
-            <span :class="`${line.color} padded`">{{ source ? line.source : 'NO LINE SOURCE AVAILABLE' }}</span>
+            <span :class="`${line.color} padded`">{{ code ? line.code : 'NO LINE SOURCE AVAILABLE' }}</span>
             <div v-if="line.showDetails.value !== ''">
               <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups">
                 <div v-for="(datapoint, info) in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
