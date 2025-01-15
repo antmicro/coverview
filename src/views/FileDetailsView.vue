@@ -74,8 +74,8 @@ onMounted(() => {
           <td v-for="type in Object.keys(store.types)">
             <span :class="`${line.color} padded`">
               <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">
-                  <img v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
-                  <img v-else src="../assets/plus.svg" alt="expand"/>
+                  <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
+                  <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
               </span>
               <span :title="[...line.hitOrigins].join(' ')" v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span>
             </span>
@@ -216,4 +216,9 @@ td:first-of-type {
 .datapoint:first-of-type {
   padding-top: 0.5rem;
  }
+
+.icon {
+  width: 13px;
+  height: 13px;
+} 
 </style>
