@@ -4,6 +4,7 @@ import Header from "./Header.vue";
 import Footer from "./Footer.vue";
 import { loadData, store, decompress } from "../store.js";
 import Info from "./Info.vue";
+
 async function load() {
   if (Object.keys(store.modules).length === 0) {
     if (Object.keys(store.files).length !== 0) {
@@ -30,7 +31,8 @@ async function load() {
   }
 }
 
-await load()
+store.loaded = load();
+await store.loaded;
 
 const default_links = {
   "Coverview": "https://github.com/antmicro/coverview"

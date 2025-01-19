@@ -2,7 +2,6 @@
 import { useRoute } from "vue-router";
 import { store, countCoverageForLine } from '../store.js';
 import { computed, ref, onMounted } from 'vue';
-import router from '../router/index.js';
 
 const params = useRoute().params;
 const file = computed(() => store.modules[params.moduleName].files[params.fileName]);

@@ -21,8 +21,10 @@ const router = createRouter({
     {
       path: "/:moduleName",
       component: ListView,
-      beforeEnter: (to, _) => {
+      beforeEnter: async (to, _) => {
+        await store.loaded;
         if (!store.modules[to.params.moduleName]) {
+          console.log(`Aborting navigation to ${to.params.moduleName} module, as it's not available in the data.`);
           return false;
         }
         return true;
@@ -40,8 +42,10 @@ const router = createRouter({
     {
       path: "/:moduleName/:fileName",
       component: FileDetailsView,
-      beforeEnter: (to, _) => {
+      beforeEnter: async (to, _) => {
+        await store.loaded;
         if (!store.modules[to.params.moduleName] || !store.modules[to.params.moduleName].files[to.params.fileName]) {
+          console.log(`Aborting navigation to ${to.params.fileName}, as it's not available in the data.`);
           return false;
         }
         return true;
