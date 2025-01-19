@@ -2,6 +2,7 @@
 import { useRoute } from "vue-router";
 import { store, countCoverageForLine } from '../store.js';
 import { computed, ref, onMounted } from 'vue';
+import router from '../router/index.js';
 
 const params = useRoute().params;
 const file = computed(() => store.modules[params.moduleName].files[params.fileName]);
@@ -70,7 +71,7 @@ onMounted(() => {
       <tbody>
         <template v-for="line in lines" :key="line.n">
         <tr>
-          <td>{{ line.n }}</td>
+          <td><span style="margin-top: -286px; position: absolute;" :id="`line-${line.n}`"></span><RouterLink :to="`#line-${line.n}`">{{ line.n }}</RouterLink></td>
           <td v-for="type in Object.keys(store.types)">
             <span :class="`${line.color} padded`">
               <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">
@@ -104,6 +105,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+a.router-link-active {
+  text-decoration: none;
+  color: white;
+}
+
 .wrapper {
   position: relative;
   width: 100%;

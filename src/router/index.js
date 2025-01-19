@@ -5,6 +5,13 @@ import FileDetailsView from "../views/FileDetailsView.vue";
 
 const router = createRouter({
   history: createWebHashHistory(),
+  scrollBehavior(to) {
+    if (to.hash) {
+      return {
+        el: to.hash,
+      }
+    }
+  },
   routes: [
     {
       path: "/",
