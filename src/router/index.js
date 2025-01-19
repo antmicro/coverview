@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import ListView from "../views/ListView.vue";
 import TreeView from "../views/TreeView.vue";
 import FileDetailsView from "../views/FileDetailsView.vue";
+import { store } from '../store.js';
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -20,6 +21,12 @@ const router = createRouter({
     {
       path: "/:moduleName",
       component: ListView,
+      beforeEnter: (to, _) => {
+        if (!store.modules[to.params.moduleName]) {
+          return false;
+        }
+        return true;
+      },
     },
     {
       path: "/tree",
@@ -33,6 +40,12 @@ const router = createRouter({
     {
       path: "/:moduleName/:fileName",
       component: FileDetailsView,
+      beforeEnter: (to, _) => {
+        if (!store.modules[to.params.moduleName] || !store.modules[to.params.moduleName].files[to.params.fileName]) {
+          return false;
+        }
+        return true;
+      },
     }
   ],
 });
