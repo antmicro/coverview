@@ -36,7 +36,7 @@ export function getCoverage(module, file) {
   }
 }
 
-import { parseInfo } from "./parse.js";
+import { parseInfo, parseDesc } from "./parse.js";
 
 export function countCoverageForLine(line) { // type not needed, since we're in specific type
   const ret = { hits: 0, total: 0 };
@@ -129,7 +129,9 @@ export function loadData(inputFiles, enhance = {}) {
         console.error(`file ${infoFiles[i]} was not loaded! Check if it's in the package.`);
         return;
       }
-      coverage[k] = (i == 0) ? parseInfo(infoFiles[i], inputFiles[infoFiles[i]]) : parseInfo(infoFiles[i], inputFiles[infoFiles[i]], coverage[k], true);
+      if (infoFiles[i].split(".").pop() == "info") {
+         coverage[k] = (i == 0) ? parseInfo(infoFiles[i], inputFiles[infoFiles[i]]) : parseInfo(infoFiles[i], inputFiles[infoFiles[i]], coverage[k], true);
+      }
     }
   }
   for (const [type, file] of Object.entries(enhance)) {
@@ -183,6 +185,21 @@ export function loadData(inputFiles, enhance = {}) {
   }
 
   store.modules = modules;
+  
+  for (let [k, v] of Object.entries(layout)) {
+    const infoFiles = (Array.isArray(v)) ? v : [v]; // if one file, make it into array of 1
+    for (let i = 0; i < infoFiles.length ; i++) {
+      if (!inputFiles[infoFiles[i]]) {
+        console.error(`file ${infoFiles[i]} was not loaded! Check if it's in the package.`);
+        return;
+      }
+      if (infoFiles[i].split(".").pop() == "desc") {
+         parseDesc(inputFiles[infoFiles[i]], store.modules, k);
+      }
+    }
+  }
+  
+  
   store.metadata = metadata;
   if (metadata) {
     if (metadata.additional) {

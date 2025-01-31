@@ -21,9 +21,9 @@ function parseDesc(content, modules, type) {
       const spl = file.split('/');
       const filename = spl.pop();
       const module = spl.join('/');
-      const lineInModule = modules[module].files[filename].coverage[type].lines[line];
+      const lineInModule = modules[module]?.files[filename]?.coverage[type]?.lines[line];
       if (!lineInModule) {
-        alert(`No such line ${line} in ${module}, maybe you are loading the wrong file for the wrong coverage type/tool?`);
+        alert(`No such line ${line} in ${module}:${filename} cov type ${type}, maybe you are loading the wrong file for the wrong coverage type/tool?`);
         return;
       }
       lineInModule.source = new Set();

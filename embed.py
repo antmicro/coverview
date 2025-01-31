@@ -31,7 +31,7 @@ with open(index_filename, 'r+') as f:
         os.chdir(args.inject_data)
 
         p = Path()
-        for filename in list(p.glob("*.info")) + ['logo.svg', 'config.json', 'sources.txt']:
+        for filename in list(p.glob("*.info")) + list(p.glob("*.desc")) + ['logo.svg', 'config.json', 'sources.txt']:
             if os.path.isfile(filename):
                 files[str(filename)] = open(str(filename), 'r').read()
 
