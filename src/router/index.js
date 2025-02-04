@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import ListView from "../views/ListView.vue";
 import TreeView from "../views/TreeView.vue";
 import FileDetailsView from "../views/FileDetailsView.vue";
+import NotFoundView from "../views/NotFoundView.vue";
 import { store } from '../store.js';
 
 const router = createRouter({
@@ -24,8 +25,7 @@ const router = createRouter({
       beforeEnter: async (to, _) => {
         await store.loaded;
         if (!store.modules[to.params.moduleName]) {
-          console.log(`Aborting navigation to ${to.params.moduleName} module, as it's not available in the data.`);
-          return false;
+          return { name: 'NotFoundView' };
         }
         return true;
       },
@@ -45,11 +45,15 @@ const router = createRouter({
       beforeEnter: async (to, _) => {
         await store.loaded;
         if (!store.modules[to.params.moduleName] || !store.modules[to.params.moduleName].files[to.params.fileName]) {
-          console.log(`Aborting navigation to ${to.params.fileName}, as it's not available in the data.`);
-          return false;
+          return { name: 'NotFoundView' };
         }
         return true;
       },
+    },
+    {
+      path: '/404',
+      name: 'NotFoundView', 
+      component: NotFoundView
     }
   ],
 });
