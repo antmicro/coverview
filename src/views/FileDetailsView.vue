@@ -93,7 +93,7 @@ onMounted(() => {
               </span>
             </span>
             <div v-if="line.showDetails.value === type">
-              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px;">
+              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px; display: flex;">
                 <div :title="datapoint.value < 1 ? [...datapoint.zeroSource].join(' ') : [...datapoint.source].join(' ')" v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
               </div>
             </div>
@@ -102,7 +102,7 @@ onMounted(() => {
           <td class="break">
             <span :class="`${line.color} padded`">{{ code ? line.code : 'NO LINE SOURCE AVAILABLE' }}</span>
             <div v-if="line.showDetails.value !== ''">
-              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups">
+              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="display: flex;">
                 <div v-for="(datapoint, info) in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
               </div>
             </div>
