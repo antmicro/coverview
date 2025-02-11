@@ -53,11 +53,11 @@ const toggleLineOrigins = (line, value) => {
 onMounted(() => {
   const main = document.querySelector('main');
   const scrollbar = document.querySelector('.sticky-scrollbar');
-  
+
   if (main && scrollbar) {
     const updateWidth = () => scrollbar.style.setProperty('--scroll-width', `${main.scrollWidth - main.clientWidth}px`);
     const syncScroll = (e) => e.target === main ? scrollbar.scrollLeft = main.scrollLeft : main.scrollLeft = scrollbar.scrollLeft;
-    
+
     updateWidth();
     main.addEventListener('scroll', syncScroll);
     scrollbar.addEventListener('scroll', syncScroll);
@@ -139,16 +139,16 @@ th, td:not(:has(.padded)), .padded {
   main {
     overflow: visible;
   }
-  
+
   table {
     white-space: pre-wrap;
     width: 100%;
   }
-  
+
   .sticky-scrollbar {
     display: none;
   }
-  
+
   td.break {
     word-break: break-all;
   }
@@ -161,17 +161,17 @@ th, td:not(:has(.padded)), .padded {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
-  
+
   main::-webkit-scrollbar {
     display: none;
   }
-  
+
   table {
     table-layout: fixed;
     white-space: nowrap;
     width: max-content;
   }
-  
+
   .sticky-scrollbar {
     position: sticky;
     bottom: 0;
