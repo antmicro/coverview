@@ -1,1 +1,9 @@
-include: [ { project: coverview-ci-files, file: test.yaml } ]
+variables:
+  # Keep in sync with coverview-ci-files's ref
+  CI_FILES_REF: 5a32a21c
+
+include:
+  - project: coverview-ci-files
+    file: test.yaml
+    # Keep in sync with CI_FILES_REF
+    ref: 5a32a21c
