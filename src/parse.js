@@ -39,16 +39,30 @@ function parseInfo(filename, content, data = {}, enhance = false) {
   const content_lines = content.split('\n');
   let curr = null;
   for (const cl of content_lines) {
-    const split = cl.split(":");
-    if (split[0] == "SF") {
-      const file = split[1];
+    if (cl == "end_of_record") {
+      data[curr.file] = curr;
+      curr = null;
+      continue;
+    }
+    else if (cl == "") {
+      continue;
+    }
+    // We want `entry` to contain substring from the first colon to the end of the line.
+    // Using `cl.split[1]` wouldn't work correctly if there are more colon characters,
+    // e.g., in BRDA's descriptive `branch` field (`info` below).
+    const separatorIndex = cl.indexOf(":");
+    if (separatorIndex == -1) {
+      alert(`The ${filename} file seems malformed, encountered line without any colon other than "end_of_record": ${cl}`);
+      return data;
+    }
+    const prefix = cl.slice(0, separatorIndex);
+    const entry = cl.slice(separatorIndex + 1);
+    if (prefix == "SF") {
+      const file = entry;
       curr = (enhance && (file in data)) ? data[file] : { lines: {}, file: file };
     }
-    else if (split[0] == "end_of_record") {
-      data[curr.file] = curr;
-    }
-    else if (split[0] == "DA") {
-      const [line, value] = split[1].split(',');
+    else if (prefix == "DA") {
+      const [line, value] = entry.split(',');
       const val = parseInt(value);
       if (!(line in curr.lines)) {
         curr.lines[line] = { value: 0, source: new Set(), zeroSource: new Set() };
@@ -59,8 +73,8 @@ function parseInfo(filename, content, data = {}, enhance = false) {
       curr.lines[line].value += val;
       val > 0 ? curr.lines[line].source.add(filename) : curr.lines[line].zeroSource.add(filename);
     }
-    else if (split[0] == "BRDA") {
-      const [line, group, info, value] = split[1].split(',');
+    else if (prefix == "BRDA") {
+      const [line, group, info, value] = entry.split(',');
       if (!(line in curr.lines)) {
         curr.lines[line] = { source: new Set(), zeroSource: new Set() };
       }
