@@ -77,7 +77,13 @@ onMounted(() => {
                   <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
                   <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
               </span>
-              <span :title="[...line.hitOrigins].join(' ')" v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}</span>
+              <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
+                  <div class="remarks popup">
+                      <ul>
+                          <li class="remark" v-for="origin in line.hitOrigins">{{origin}}</li>
+                      </ul>
+                  </div>
+              </span>
             </span>
             <div v-if="line.showDetails.value === type">
               <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px;">
@@ -225,5 +231,43 @@ td:first-of-type {
 .icon {
   width: 13px;
   height: 13px;
-} 
+}
+
+span .remarks {
+    display: none;
+}
+span:hover .remarks {
+    display: block;
+    position: absolute;
+    width: 100%;
+    z-index: 3;
+}
+
+span:hover .remarks ul {
+    width: max-content;
+}
+span:hover .remarks ul .remark {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.675rem;
+    background: #000000;
+    padding: 0.2rem;
+    border-right: 1px solid;
+    border-left: 1px solid;
+    text-align: left;
+    border-bottom: 1px solid;
+}
+
+span:hover .remarks ul .remark:first-child {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-top: 1px solid;
+}
+
+span:hover .remarks ul .remark:last-child {
+    border-bottom: 1px solid;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
 </style>
