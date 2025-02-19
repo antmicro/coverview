@@ -6,6 +6,7 @@ import { computed, ref, onMounted } from 'vue';
 const params = useRoute().params;
 const file = computed(() => store.modules[params.moduleName].files[params.fileName]);
 const code = file?.value?.source?.split('\n');
+const originThreshold = 10;
 let lineCount = 0;
 
 if (code) {
@@ -32,17 +33,21 @@ let lines = computed(() => Array.from(Array(lineCount).keys())
           const line = file.value.coverage[type]?.lines[i+1];
           if (line) {
             coverageData[type] = countCoverageForLine(line);
-            hitOrigins = line.source;
+            hitOrigins = Array.from(line.source);
           }
         }
       }
-      const lineData = { n: i+1, coverageData, color: getColor(coverageData), showDetails: ref(''), hitOrigins };
+      const lineData = { n: i+1, coverageData, color: getColor(coverageData), showDetails: ref(''), showOrigins: ref(false), hitOrigins };
       if (code) lineData.code = code[i];
       return lineData;
  }));
 
 const toggleDetails = (line, type) => {
   line.showDetails.value = (line.showDetails.value === type) ? '' : type;
+}
+
+const toggleLineOrigins = (line, value) => {
+  line.showOrigins.value = value;
 }
 
 onMounted(() => {
@@ -78,9 +83,11 @@ onMounted(() => {
                   <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
               </span>
               <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
-                  <div class="remarks popup">
+                  <div class="remarks" @mouseleave="toggleLineOrigins(line, false)">
                       <ul>
-                          <li class="remark" v-for="origin in line.hitOrigins">{{origin}}</li>
+                          <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>
+                          <li class="remark" v-else v-for="origin in line.hitOrigins">{{origin}}</li>
+                          <li class="remark" style="cursor: pointer;" @click="toggleLineOrigins(line, true)" v-if="!line.showOrigins.value && line.hitOrigins.length > originThreshold">Show more...</li>
                       </ul>
                   </div>
               </span>
