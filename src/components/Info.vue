@@ -44,7 +44,7 @@ function onDatasetChange(value) {
 .info-section {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 5;
   background: var(--bg-primary);
   display: flex;
   margin-bottom: 2rem;
