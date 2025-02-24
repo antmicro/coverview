@@ -77,6 +77,14 @@ const buildRoute = (target) => {
   }
 }
 
+const hitCountText = (item) => {
+  // Only show 'N/A' for `hits` if the property doesn't exist or both `hits` and `total` are 0-ish
+  if (!('hits' in item) || (item.hits === 0 && (item?.total ?? 0) === 0)) {
+    return 'N/A'
+  }
+  return item.hits
+}
+
 </script>
 
 <template>
@@ -126,7 +134,7 @@ const buildRoute = (target) => {
                 <span class="rate-value" :style="{ color: getRateColor(getRate(item.data[name]), false, !store.types[name].visibility) }"> {{ getRate(item.data[name]) }}% </span>
               </div>
             </td>
-            <td class="hit-cell">{{ item.data[name]?.hits || 'N/A'}}</td>
+            <td class="hit-cell">{{ hitCountText(item.data[name]) }}</td>
             <td class="total-cell">{{ item.data[name]?.total || 'N/A' }}</td>
           </template>
         </tr>
