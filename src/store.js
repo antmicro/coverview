@@ -153,15 +153,24 @@ export function loadData(inputFiles, enhance = {}) {
     }
   }
 
+  function getModuleName(fileName) {
+    const moduleName = fileName.split("/").slice(0, -1).join("/");
+    if (!moduleName) {
+      // Fall-back, if the module doesn't exist (e.g. we were given just a bunch of files with no paths)
+      return metadata.repo || "./"
+    }
+    return moduleName;
+  }
+
   const modules = Object.fromEntries(
     Array.from(
-      new Set(filenames.map((n) => n.split("/").slice(0, -1).join("/"))),
+      new Set(filenames.map((n) => getModuleName(n))),
     ).map((name) => [
       name,
       {
         files: Object.fromEntries(
           Object.entries(files)
-            .filter(([k,_]) => k.split("/").slice(0, -1).join("/") === name)
+            .filter(([k,_]) => getModuleName(k) === name)
             .map(([k,v]) => [k.split("/").at(-1), v]),
         ),
         coverage: {}
