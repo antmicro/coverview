@@ -1,6 +1,6 @@
 # Coverview
 
-Copyright (c) 2023-2024 [Antmicro](https://www.antmicro.com)
+Copyright (c) 2023-2025 [Antmicro](https://www.antmicro.com)
 
 <picture>
   <source srcset="images/Coverview_logotype_black.png" media="(prefers-color-scheme: light)"/>
