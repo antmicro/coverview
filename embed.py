@@ -4,6 +4,7 @@ index_filename = "dist/index.html"
 # Add more files + arguments for choosing names when this all works
 
 import argparse
+import base64
 import json
 import os
 from pathlib import Path
@@ -26,19 +27,23 @@ with open(index_filename, 'r+') as f:
     content = f.read()
 
     if args.inject_data:
-        files = {}
+        if os.path.isfile(args.inject_data) and args.inject_data.endswith('.zip'):
+            content = content.replace(original_snippet, 'let originalFiles = {}; let embeddedZipArchive = "' +
+                                      base64.b64encode(Path(args.inject_data).read_bytes()).decode('ascii') + '"')
+        else:
+            files = {}
 
-        cwd = os.getcwd()
-        os.chdir(args.inject_data)
+            cwd = os.getcwd()
+            os.chdir(args.inject_data)
 
-        p = Path()
-        for filename in list(p.glob("*.info")) + list(p.glob("*.desc")) + ['logo.svg', 'config.json', 'sources.txt']:
-            if os.path.isfile(filename):
-                files[str(filename)] = open(str(filename), 'r').read()
+            p = Path()
+            for filename in list(p.glob("*.info")) + list(p.glob("*.desc")) + ['logo.svg', 'config.json', 'sources.txt']:
+                if os.path.isfile(filename):
+                    files[str(filename)] = open(str(filename), 'r').read()
 
-        os.chdir(cwd)
+            os.chdir(cwd)
 
-        content = content.replace(original_snippet, 'let originalFiles = ' + json.dumps(files))
+            content = content.replace(original_snippet, 'let originalFiles = ' + json.dumps(files))
 
     elif args.fetch_data:
         fetch_snippet = 'let originalFiles = {}; let fetchData = "%s";' % args.fetch_data
