@@ -194,7 +194,7 @@ export function loadData(inputFiles, enhance = {}) {
   }
 
   store.modules = modules;
-  
+
   for (let [k, v] of Object.entries(layout)) {
     const infoFiles = (Array.isArray(v)) ? v : [v]; // if one file, make it into array of 1
     for (let i = 0; i < infoFiles.length ; i++) {
@@ -207,8 +207,8 @@ export function loadData(inputFiles, enhance = {}) {
       }
     }
   }
-  
-  
+
+
   store.metadata = metadata;
   if (metadata) {
     if (metadata.additional) {
