@@ -13,6 +13,12 @@ async function load() {
       if (Object.keys(originalFiles).length !== 0) {
         store.files = originalFiles;
         loadData(originalFiles);
+      } else if (typeof embeddedZipArchive === 'string') {
+        const blob = await fetch(`data:application/zip;base64,${embeddedZipArchive}`).then(res => res.body);
+        const unzipped = await decompress(blob);
+        originalFiles = unzipped
+        store.files = originalFiles;
+        loadData(originalFiles);
       } else if (typeof fetchData !== 'undefined') {
         let url = fetchData;
         if (typeof templatedFetchUrl !== 'undefined') {
