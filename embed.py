@@ -4,6 +4,10 @@ index_filename = "dist/index.html"
 # Add more files + arguments for choosing names when this all works
 
 import argparse
+import json
+import os
+from pathlib import Path
+import re
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--inject-data')
@@ -20,13 +24,10 @@ original_snippet = 'let originalFiles = {}'
 
 with open(index_filename, 'r+') as f:
     content = f.read()
-    import json
 
     if args.inject_data:
         files = {}
 
-        from  pathlib import Path
-        import os
         cwd = os.getcwd()
         os.chdir(args.inject_data)
 
@@ -44,7 +45,6 @@ with open(index_filename, 'r+') as f:
         if args.template_url: fetch_snippet += 'let templatedFetchUrl = "%s";' % args.template_url
         content = content.replace(original_snippet, fetch_snippet)
 
-    import re
     r = r'(<script type="module" crossorigin src="/(assets/index-[\w\-]+.js)"></script>)'
     matches = re.findall(r, content)
     for m in matches:
