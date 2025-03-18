@@ -97,14 +97,24 @@ function reset() {
         </div>
       </div>
       <ul class="breadcrumbs">
-        <li><RouterLink to="/">{{ store.metadata.repo?.split("/").pop() || 'Overview' }}</RouterLink></li>
+        <li>
+          <RouterLink :to="{ path: '/', query: { dataset: store.selected_dataset } }">{{ store.metadata.repo?.split("/").pop() || 'Overview' }}</RouterLink>
+        </li>
         <li v-if="$route.params.moduleName">
           <img src="../assets/caret.svg" alt="caret" />
-          <RouterLink :to="'/' + encodeURIComponent($route.params.moduleName)">{{ $route.params.moduleName }}</RouterLink>
+          <RouterLink :to="{
+            path: `/${encodeURIComponent($route.params.moduleName)}`,
+            query: { dataset: store.selected_dataset },
+          }">
+            {{ $route.params.moduleName }}
+          </RouterLink>
         </li>
         <li v-if="$route.params.fileName">
           <img src="../assets/caret.svg" alt="caret" />
-          <RouterLink :to="'/' + encodeURIComponent($route.params.moduleName) + '/'+ encodeURIComponent($route.params.fileName)">
+          <RouterLink :to="{
+            path: `/${encodeURIComponent($route.params.moduleName)}/${encodeURIComponent($route.params.fileName)}`,
+            query: { dataset: store.selected_dataset },
+          }">
             {{ decodeURIComponent($route.params.fileName) }}
           </RouterLink>
         </li>

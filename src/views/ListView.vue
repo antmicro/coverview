@@ -70,10 +70,13 @@ const sortedData = computed(() => tableData.sort((a, b) => {
 
 const buildRoute = (target) => {
   if (props.burndown) {
-    return target;
+    return { path: target, query: { dataset: store.selected_dataset } };
   }
   else {
-    return (route.params.moduleName ? encodeURIComponent(route.params.moduleName) + '/' : '') + encodeURIComponent(target);
+    return {
+      path: (route.params.moduleName ? encodeURIComponent(route.params.moduleName) + '/' : '') + encodeURIComponent(target),
+      query: { dataset: store.selected_dataset },
+    }
   }
 }
 

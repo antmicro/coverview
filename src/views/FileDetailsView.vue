@@ -75,7 +75,10 @@ onMounted(() => {
       <tbody>
         <template v-for="line in lines" :key="line.n">
         <tr>
-          <td><span style="margin-top: -286px; position: absolute;" :id="`line-${line.n}`"></span><RouterLink :to="`#line-${line.n}`">{{ line.n }}</RouterLink></td>
+          <td>
+            <span style="margin-top: -286px; position: absolute;" :id="`line-${line.n}`"></span>
+            <RouterLink :to="{ hash: `#line-${line.n}`, query: { dataset: store.selected_dataset } }">{{ line.n }}</RouterLink>
+          </td>
           <td v-for="type in Object.keys(store.types)">
             <span :class="`${line.color} padded`">
               <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">

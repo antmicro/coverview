@@ -2,12 +2,14 @@
 import Summary from "../components/Summary.vue";
 import DropdownSelect from "./DropdownSelect.vue";
 import { store, loadData } from '../store.js';
+import router from "../router/index.js";
 
 const props = defineProps({ timestamp: String });
 
 function onDatasetChange(value) {
   store.selected_dataset = value;
   loadData(store.files);
+  router.replace({ query: { dataset: store.selected_dataset } });
 }
 </script>
 

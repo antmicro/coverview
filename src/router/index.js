@@ -3,7 +3,14 @@ import ListView from "../views/ListView.vue";
 import TreeView from "../views/TreeView.vue";
 import FileDetailsView from "../views/FileDetailsView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
-import { store } from '../store.js';
+import { loadData, store } from '../store.js';
+
+function loadSelectedDataset(dataset) {
+  if (dataset && store.selected_dataset !== dataset) {
+    store.selected_dataset = dataset;
+    loadData(store.files);
+  }
+}
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -18,12 +25,17 @@ const router = createRouter({
     {
       path: "/",
       component: ListView,
+      beforeEnter: async (to, _) => {
+        await store.loaded;
+        loadSelectedDataset(to.query.dataset);
+      }
     },
     {
       path: "/:moduleName",
       component: ListView,
       beforeEnter: async (to, _) => {
         await store.loaded;
+        loadSelectedDataset(to.query.dataset);
         if (!store.modules[to.params.moduleName]) {
           return { name: 'NotFoundView' };
         }
@@ -44,6 +56,7 @@ const router = createRouter({
       component: FileDetailsView,
       beforeEnter: async (to, _) => {
         await store.loaded;
+        loadSelectedDataset(to.query.dataset);
         if (!store.modules[to.params.moduleName] || !store.modules[to.params.moduleName].files[to.params.fileName]) {
           return { name: 'NotFoundView' };
         }
