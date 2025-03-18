@@ -113,7 +113,6 @@ export function loadData(inputFiles, enhance = {}) {
   if (!(store.selected_dataset in config.datasets)) {
     const firstDataset = Object.keys(config.datasets)[0];
     store.selected_dataset = firstDataset;
-    sessionStorage.setItem("dataset", firstDataset);
   }
 
   const layout = config.datasets[store.selected_dataset];

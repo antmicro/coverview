@@ -7,7 +7,6 @@ const props = defineProps({ timestamp: String });
 
 function onDatasetChange(value) {
   store.selected_dataset = value;
-  sessionStorage.setItem("dataset", value);
   loadData(store.files);
 }
 </script>
