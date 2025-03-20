@@ -2,16 +2,9 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import ListView from "../views/ListView.vue";
 import TreeView from "../views/TreeView.vue";
 import TestView from "../views/TestView.vue";
-import FileDetailsView from "../views/FileDetailsView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
-import { loadData, store } from '../store.js';
-
-function loadSelectedDataset(dataset) {
-  if (dataset && store.selected_dataset !== dataset) {
-    store.selected_dataset = dataset;
-    loadData(store.files);
-  }
-}
+import PathView from "../views/PathView.vue";
+import { pathType, store, selectDataset } from '../store.js';
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -25,22 +18,20 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      component: ListView,
+      component: PathView,
       beforeEnter: async (to, _) => {
         await store.loaded;
-        loadSelectedDataset(to.query.dataset);
+        selectDataset(to.query.dataset);
       }
     },
     {
-      path: "/:moduleName",
-      component: ListView,
+      path: "/:path",
+      component: PathView,
+      props: true,
       beforeEnter: async (to, _) => {
         await store.loaded;
-        loadSelectedDataset(to.query.dataset);
-        if (!store.modules[to.params.moduleName]) {
-          return { name: 'NotFoundView' };
-        }
-        return true;
+        selectDataset(to.query.dataset);
+        return pathType(to.params.path) ? true : { name: 'NotFoundView' };
       },
     },
     {
@@ -50,23 +41,15 @@ const router = createRouter({
     {
       path: "/burndown",
       component: ListView,
-      props: { burndown: true }
+      props: { burndown: true },
+      beforeEnter: async (to, _) => {
+        await store.loaded;
+        selectDataset(to.query.dataset);
+      }
     },
     {
       path: "/tests",
       component: TestView
-    },
-    {
-      path: "/:moduleName/:fileName",
-      component: FileDetailsView,
-      beforeEnter: async (to, _) => {
-        await store.loaded;
-        loadSelectedDataset(to.query.dataset);
-        if (!store.modules[to.params.moduleName] || !store.modules[to.params.moduleName].files[to.params.fileName]) {
-          return { name: 'NotFoundView' };
-        }
-        return true;
-      },
     },
     {
       path: '/404',

@@ -1,12 +1,12 @@
 <script setup>
-import { getCoverage, getRateColor, getRate } from '../store.js';
+import { store, getRateColor, getRate, loadAdditionalFile } from '../store.js';
 import { computed, ref } from 'vue';
-import { store, loadData } from '../store.js';
-import { parseDesc } from '../parse.js';
 
-const props = defineProps(['module', 'file']);
+const props = defineProps({
+  path: String,
+});
 
-let coverage_summaries = computed(() => getCoverage(props.module, props.file));
+const coverageSummary = computed(() => store?.summaries[props.path ?? ""] ?? {});
 
 const refs = ref({});
 
@@ -19,19 +19,13 @@ const loadFile = (inputRef, type) => {
 
 async function onInfoFileUpload(event) {
   const file = event.target.files[0];
-  let content = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsText(file);
-    });
-  const ext = file.name.split('.').pop()
-  if (ext == "info") {
-    const enhance = {};
-    enhance[chosenType] = { name: file.name, content: content };
-    loadData(store.files, enhance);
-  } else { // ext == desc
-    parseDesc(content, store.modules, chosenType);
-  }
+  const content = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsText(file);
+  });
+
+  loadAdditionalFile(chosenType, file.name, content);
 }
 
 </script>
@@ -50,11 +44,11 @@ async function onInfoFileUpload(event) {
             </tr>
             </thead>
             <tbody>
-            <tr v-for="[type, summary] in Object.entries(coverage_summaries)">
+            <tr v-for="[type, summary] in Object.entries(coverageSummary)">
               <th class="loader"><input accept=".info, .desc" @change="onInfoFileUpload($event)" type="file" :ref="(el) => { refs[type] = el }" :name="'add_' + type"><div @click="loadFile(refs[type], type)"><img src="../assets/add.svg" alt="Load coverage from file" /></div></th>
-              <th class="visibility"><div @click='() => store.types[type].visibility = !store.types[type].visibility'><img src="../assets/visibility.svg" alt="Hide icon" v-if="store.types[type].visibility"/><img src="../assets/visibility-off.svg" alt="Show icon" v-else/></div></th>
+              <th class="visibility"><div @click='() => store.hiddenCoverageTypes[type] = !store.hiddenCoverageTypes[type]'><img src="../assets/visibility.svg" alt="Hide icon" v-if="!store.hiddenCoverageTypes[type]"/><img src="../assets/visibility-off.svg" alt="Show icon" v-else/></div></th>
                 <th>{{ type }}</th>
-                <td :style="{ backgroundColor: getRateColor(getRate(summary), true, !store.types[type].visibility) }">{{ getRate(summary) }}%</td>
+                <td :style="{ backgroundColor: getRateColor(getRate(summary), true, store.hiddenCoverageTypes[type]) }">{{ getRate(summary) }}%</td>
                 <td>{{ summary.hits }}</td>
                 <td>{{ summary.total }}</td>
             </tr>
@@ -90,6 +84,7 @@ th.visibility > div {
   .summary-table {
     min-width: auto;
   }
+
   th, td {
     font-size: 0.875rem;
     padding: 0.375rem 1.75rem;

@@ -1,82 +1,65 @@
 <script setup>
-//import SortIcon from "../components/SortIcon.vue";
-import { store, getCoverage, getRateColor, getRate } from '../store.js';
-import { useRoute } from 'vue-router';
+import { store, getRateColor, getRate, availableCoverageTypes, getPathChildren, pathType } from '../store.js';
 import { computed } from 'vue';
 import router from '../router/index.js';
 
-const props = defineProps({ burndown: Boolean });
-
-let route = useRoute();
-
-let tableData = computed(() => {
-  let td = [];
-  if (!route.params.moduleName) {
-    if (props.burndown) {
-      for (let moduleName of Object.keys(store.modules)) {
-        for (let fileName of Object.keys(store.modules[moduleName].files)) {
-          td.push({
-            source: encodeURIComponent(moduleName) + '/' + fileName,
-            data: getCoverage(moduleName, fileName)
-          })
-        }
-      }
-      const countMisses = x => {
-        let misses = 0;
-        for (let t of Object.values(x.data)) {
-          misses += t.total - t.hits;
-        }
-        return misses;
-      }
-      // sort by number of misses, descending
-      return td.sort((a,b) => countMisses(b) - countMisses(a));
-    }
-    else {
-      td = Object.entries(store.modules).map(([module, _]) => ({
-        source: module,
-        data: getCoverage(decodeURIComponent(module), null)
-      }));
-    }
-  } else {
-    const moduleName = decodeURIComponent(route.params.moduleName);
-    if (!(moduleName in store.modules)) return [];
-    td = Object.entries(store.modules[moduleName].files).map(([fileName, _]) => ({
-      source: fileName,
-      data: getCoverage(moduleName, fileName)
-    }));
-  }
-  // sort alphabetically
-  return td.sort((a,b) => { return a.source.localeCompare(b.source) });
+const props = defineProps({
+  burndown: Boolean,
+  modulePath: String,
 });
 
-/*const sortOrder = ref("asc");
-const sortKey = ref("source");
+const modulePath = computed(() => props.modulePath ?? "");
+const coverageTypes = computed(() => availableCoverageTypes());
 
-const sortedData = computed(() => tableData.sort((a, b) => {
-    const modifier = sortOrder.value === "asc" ? 1 : -1;
-    if (a[sortKey.value] < b[sortKey.value]) return -1 * modifier;
-    if (a[sortKey.value] > b[sortKey.value]) return 1 * modifier;
-    return 0;
-}));*/
+const tableData = computed(() => {
+  const td = [];
+  if (props.burndown) {
+    const countMisses = x => {
+      let misses = 0;
+      for (let t of Object.values(x.data)) {
+        misses += t.total - t.hits;
+      }
+      return misses;
+    }
 
-/*const sort = (key) => {
-  if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
-  } else {
-    sortKey.value = key;
-    sortOrder.value = "asc";
+    for (const path of Object.keys(store.files)) {
+      td.push({
+        name: path,
+        path: path,
+        data: store.summaries[path] ?? {},
+      });
+    }
+
+    // sort by number of misses, descending
+    return td.sort((a, b) => countMisses(b) - countMisses(a));
   }
-}*/
+
+  const parent = modulePath.value ? `${modulePath.value}/` : '';
+  for (const child of getPathChildren(parent)) {
+    const fullPath = `${parent}${child}`;
+    td.push({
+      name: child,
+      path: fullPath,
+      data: store.summaries[fullPath] ?? {},
+    });
+  }
+
+  return td.sort((a,b) => {
+    const aType = pathType(a.path);
+    const bType = pathType(b.path);
+    if (aType !== bType) {
+      // Show directories before files
+      return aType === "file" ? 1 : -1;
+    }
+    // sort alphabetically otherwise
+    return a.name.localeCompare(b.name);
+  });
+});
 
 const buildRoute = (target) => {
-  if (props.burndown) {
-    return { path: target, query: { dataset: store.selected_dataset } };
-  }
-  else {
-    return {
-      path: (route.params.moduleName ? encodeURIComponent(route.params.moduleName) + '/' : '') + encodeURIComponent(target),
-      query: { dataset: store.selected_dataset },
-    }
+  return {
+    path: `/${encodeURIComponent(target)}`,
+    query: { dataset: store.selectedDataset },
   }
 }
 
@@ -85,7 +68,7 @@ const hitCountText = (item) => {
   if (!('hits' in item) || (item.hits === 0 && (item?.total ?? 0) === 0)) {
     return 'N/A'
   }
-  return item.hits
+  return item.hits;
 }
 
 </script>
@@ -96,13 +79,13 @@ const hitCountText = (item) => {
       <thead>
         <tr class="header-groups">
           <th></th>
-          <th colspan="3" class="group-header" v-for="name in Object.keys(store.types)">{{ name }}</th>
+          <th colspan="3" class="group-header" v-for="name in coverageTypes">{{ name }}</th>
         </tr>
         <tr>
           <th class="source-column">
             Source
           </th>
-          <template v-for="_ in Object.keys(store.types)">
+          <template v-for="_ in coverageTypes">
             <th class="rate-column">
               Rate
             </th>
@@ -116,13 +99,13 @@ const hitCountText = (item) => {
         </tr>
       </thead>
       <tbody>
-        <tr class="link" @click="router.push(buildRoute(item.source))" v-for="item in tableData" :key="item.source">
+        <tr class="link" @click="router.push(buildRoute(item.path))" v-for="item in tableData" :key="item.path">
           <td class="name">
-            <img v-if="$route.params.moduleName || burndown" src="../assets/file.svg" alt="file" />
+            <img v-if="pathType(item.path) === 'file'" src="../assets/file.svg" alt="file" />
             <img v-else src="../assets/module.svg" alt="module" />
-            {{ decodeURIComponent(item.source) }}
+            {{ item.name }}
           </td>
-          <template v-for="name in Object.keys(store.types)">
+          <template v-for="name in coverageTypes">
             <td class="rate-cell">
               <div class="progress-wrapper">
                 <div class="progress-container">
@@ -130,11 +113,11 @@ const hitCountText = (item) => {
                     class="progress-bar"
                     :style="{
                       width: `${getRate(item.data[name])}%`,
-                      backgroundColor: getRateColor(getRate(item.data[name]), false, !store.types[name].visibility),
+                      backgroundColor: getRateColor(getRate(item.data[name]), false, store.hiddenCoverageTypes[name]),
                     }"
                   ></div>
                 </div>
-                <span class="rate-value" :style="{ color: getRateColor(getRate(item.data[name]), false, !store.types[name].visibility) }"> {{ getRate(item.data[name]) }}% </span>
+                <span class="rate-value" :style="{ color: getRateColor(getRate(item.data[name]), false, store.hiddenCoverageTypes[name]) }"> {{ getRate(item.data[name]) }}% </span>
               </div>
             </td>
             <td class="hit-cell">{{ hitCountText(item.data[name]) }}</td>

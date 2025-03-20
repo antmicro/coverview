@@ -1,13 +1,19 @@
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { store, countCoverageForLine } from '../store.js';
+import { store, availableCoverageTypes } from '../store.js';
 import { computed, ref, onMounted } from 'vue';
 
+const props = defineProps({
+  fileName: String,
+})
+
+/** @type {{value: File}} */
+const file = computed(() => store.files[props.fileName]);
+const coverageTypes = computed(() => availableCoverageTypes());
 const params = useRoute().params;
 const route = useRoute();
 const router = useRouter();
-const file = computed(() => store.modules[params.moduleName].files[params.fileName]);
-const code = file?.value?.source?.split('\n');
+const code = file.value.source?.split('\n');
 const originThreshold = 10;
 let lineCount = 0;
 const selectedLineStart = ref(null);
@@ -15,7 +21,7 @@ const selectedLineStart = ref(null);
 if (code) {
   lineCount = code.length;
 } else {
-  lineCount = Math.max(...(Object.values(file.value.coverage).map(x => Object.keys(x.lines || []).toSorted().at(-1) || 0)));
+  lineCount = Math.max(...(Object.values(file.value.records).map(x => x.lines.at(-1) ?? 0)));
 }
 
 function getColor(coverageData) {
@@ -26,23 +32,26 @@ function getColor(coverageData) {
   return "dimmed-yellow";
 }
 
-let lines = computed(() => Array.from(Array(lineCount).keys())
-    .map(i => {
-      const coverageData = {};
-      let hitOrigins = []; // this is a bit hacky, as we only have "line" inside the loop
-      // we use hitOrigins as the tests which hit the line since "source" is confusing
-      for (const type of Object.keys(store.types)) {
-        if (store.types[type].visibility) {
-          const line = file.value.coverage[type]?.lines[i+1];
-          if (line) {
-            coverageData[type] = countCoverageForLine(line);
-            hitOrigins = Array.from(line.source);
-          }
+const lines = computed(() => Array.from(Array(lineCount).keys())
+  .map(i => {
+    const coverageData = {};
+    let hasGroups = Object.create(null);
+    let hitOrigins = []; // this is a bit hacky, as we only have "line" inside the loop
+    // we use hitOrigins as the tests which hit the line since "source" is confusing
+    for (const [type, record] of Object.entries(file.value.records)) {
+      if (!store.hiddenCoverageTypes[type]) {
+        const line = record.lines[i+1];
+        if (line) {
+          hasGroups[type] = line.hasGroups;
+          const [hits, total] = line.stats;
+          coverageData[type] = { hits, total };
+          hitOrigins = Array.from(line.sources);
         }
       }
-      const lineData = { n: i+1, coverageData, color: getColor(coverageData), showDetails: ref(''), showOrigins: ref(false), hitOrigins };
-      if (code) lineData.code = code[i];
-      return lineData;
+    }
+    const lineData = {n: i+1, coverageData, color: getColor(coverageData), showDetails: ref(''), showOrigins: ref(false), hitOrigins, hasGroups };
+    if (code) lineData.code = code[i];
+    return lineData;
  }));
 
 const toggleDetails = (line, type) => {
@@ -143,21 +152,21 @@ onMounted(async () => {
     <main>
     <div v-if="lines.length == 0">NO COVERAGE / SOURCE DATA FOR THIS FILE IS AVAILABLE.</div>
     <table v-if="lines.length != 0">
-      <thead><tr><th></th><th v-for="name in Object.keys(store.types)">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
+      <thead><tr><th></th><th v-for="name in coverageTypes">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
       <tbody>
         <template v-for="line in lines" :key="line.n">
         <tr>
           <td>
             <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
-            <RouterLink :to="{ hash: `#L${line.n}`, query: { dataset: store.selected_dataset } }" @click="highlightLine">{{ line.n }}</RouterLink>
+            <RouterLink :to="{ hash: `#L${line.n}`, query: { dataset: store.selectedDataset } }" @click="highlightLine">{{ line.n }}</RouterLink>
           </td>
-          <td v-for="type in Object.keys(store.types)">
+          <td v-for="type in coverageTypes">
             <span :class="`${line.color} padded`">
-              <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && store.types[type].visibility && file.coverage[type]?.lines[line.n].groups">
+              <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type] && line.hasGroups[type]">
                   <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
                   <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
               </span>
-              <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
+              <span v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
                   <div class="remarks" @mouseleave="toggleLineOrigins(line, false)" @mouseenter="showRemarks($event, line)">
                       <ul>
                           <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>
@@ -168,8 +177,8 @@ onMounted(async () => {
               </span>
             </span>
             <div v-if="line.showDetails.value === type">
-              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px; display: flex;">
-                <div :title="datapoint.value < 1 ? [...datapoint.zeroSource].join(' ') : [...datapoint.source].join(' ')" v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
+              <div v-for="g in file.records[type]?.lines[line.n].groups" style="padding-left: 20px; display: flex;">
+                <div :title="[...datapoint.sources].join(' ')" v-for="datapoint in g.subGroups" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
               </div>
             </div>
           </td>
@@ -177,8 +186,8 @@ onMounted(async () => {
           <td class="break">
             <span :class="`${line.color} padded`">{{ code ? line.code : 'NO LINE SOURCE AVAILABLE' }}</span>
             <div v-if="line.showDetails.value !== ''">
-              <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="display: flex;">
-                <div v-for="(datapoint, info) in g" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
+              <div v-for="g in file.records[line.showDetails.value]?.lines[line.n].groups" style="display: flex;">
+                <div v-for="(datapoint, info) in g.subGroups" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
               </div>
             </div>
           </td>

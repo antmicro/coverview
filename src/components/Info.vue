@@ -1,16 +1,22 @@
 <script setup>
 import Summary from "../components/Summary.vue";
 import DropdownSelect from "./DropdownSelect.vue";
-import { store, loadData } from '../store.js';
+import { store, selectDataset, pathType } from '../store.js';
 import router from "../router/index.js";
+import { computed } from "vue";
 
-const props = defineProps({ timestamp: String });
+const props = defineProps({
+  timestamp: String,
+  path: String,
+});
 
 function onDatasetChange(value) {
-  store.selected_dataset = value;
-  loadData(store.files);
-  router.replace({ query: { dataset: store.selected_dataset } });
+  selectDataset(value);
+  router.replace({ query: { dataset: store.selectedDataset } });
 }
+
+const pathKind = computed(() => pathType(props.path));
+
 </script>
 
 <template>
@@ -18,26 +24,26 @@ function onDatasetChange(value) {
     <div class="info-header">
       <div class="title-row">
         <DropdownSelect
-          v-if="Object.keys(store?.metadata?.datasets || {}).length > 1"
-          v-model="store.selected_dataset"
+          v-if="Object.keys(store?.metadata?.datasets ?? {}).length > 1"
+          v-model="store.selectedDataset"
           :options="Object.keys(store.metadata.datasets)"
           label="Select dataset"
           @update:modelValue="onDatasetChange"
         />
         <h1 class="info-title">
           <span>
-            <img src="../assets/file.svg" v-if="$route.params.fileName"/>
-            <img src="../assets/module.svg" v-else-if="$route.params.moduleName"/>
+            <img src="../assets/file.svg" v-if="pathKind === 'file'"/>
+            <img src="../assets/module.svg" v-else-if="pathKind === 'dir'"/>
             <img src="../assets/repo.svg" v-else-if="store.metadata.repo"/>
           </span>
-          {{$route.params.fileName || $route.params.moduleName || store.metadata.repo?.split("/").pop() || 'Overview'}}
+          {{ (props.path ? props.path.split('/').pop() : store.metadata.repo?.split("/").pop()) || 'Overview' }}
         </h1>
       </div>
       <div class="info-metadata" v-if="timestamp">
         <span class="metadata-item">Test timestamp: {{ (new Date(timestamp)).toLocaleString('sv') }}</span>
       </div>
     </div>
-    <Summary :module="$route.params.moduleName" :file="$route.params.fileName"></Summary>
+    <Summary :path="props.path"></Summary>
   </div>
 </template>
 

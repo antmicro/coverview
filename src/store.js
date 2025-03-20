@@ -1,223 +1,317 @@
 import { reactive, toRaw } from 'vue'
-
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
-
 import { XzReadableStream } from 'xz-decompress';
+import { Record, parseInfo, parseDesc, removeLeadingSlashFromPath } from './parse';
+
+/**
+ * @typedef {{[coverageType: string]: Record}} Records
+ * @typedef {{records: Records, source: string}} File
+ * @typedef {{[filepath: string]: File}} Files
+ * @typedef {{[dataset: string]: Files}} AllFiles
+ * @typedef {{[path: string]: { [type: string]: { hits: number, total: number } }}} CoverageSummary
+ * @typedef {{[dataset: string]: CoverageSummary}} AllSummaries
+ */
 
 export const store = reactive({
-  files: {},
-  loadedFromFile: false, // data was loaded from file
-  types: {},             // available coverage types
-  modules: {},           // coverage data aggregated by module
-  metadata: {},          // other data
-  selected_dataset: '',  // the currently selected dataset
-  tests: new Set()       // available tests
-})
+  /** @type {Files} */
+  files: Object.create(null),
+  /** @type {CoverageSummary} */
+  summaries: Object.create(null),
+  metadata: Object.create(null),
+  loadedFromFile: false,
+  hiddenCoverageTypes: Object.create(null),
+  selectedDataset: "",
+  tests: new Set()
+});
 
-export function getCoverage(module, file) {
-  if (module && file) {
-    const fileObject = toRaw(store.modules)[module].files[file];
-    const coverage = {};
-    for (const type of Object.keys(store.types)) {
-      coverage[type] = countCoverageForFile(fileObject, type);
-    }
-    return coverage;
-  } else if (module) {
-    return toRaw(store.modules[module].coverage);
-  } else {
-    const coverage_totals = {};
-    for (const type of Object.keys(store.types)) {
-      coverage_totals[type] = { hits: 0, total: 0 };
-      for (const [name, m] of Object.entries(store.modules)) {
-        coverage_totals[type].hits += toRaw(m).coverage[type].hits;
-        coverage_totals[type].total += toRaw(m).coverage[type].total;
-      }
-    }
-    return coverage_totals;
-  }
-}
+const caches = reactive({
+  /** @type {AllFiles} */
+  files: Object.create(null),
+  /** @type {AllSummaries} */
+  summaries: Object.create(null),
+});
 
-import { parseInfo, parseDesc } from "./parse.js";
+/**
+ * @param {{[filepath: string]: string}} inputFiles
+ */
+export function loadData(inputFiles) {
+  console.time("File loading");
 
-export function countCoverageForLine(line) { // type not needed, since we're in specific type
-  const ret = { hits: 0, total: 0 };
-  if (line.groups) {
-    // if there are groups in this line, count fields and the values
-    for (const g of Object.values(line.groups)) {
-      let bits = Object.values(g);
-      ret.hits += bits.filter(x => x.value > 0).length;
-      ret.total += bits.length;
-    }
-  } else if (store.metadata.tests_as_total === true && store.tests.size !== 0 && line.source) {
-    ret.hits = line.source.size;
-    ret.total = store.tests.size;
-  } else {
-    ret.hits = (line.value > 0) ? 1 : 0;
-    ret.total = 1;
-  }
-  return ret;
-}
+  unloadData();
 
-function countCoverageForFile(file, type) {
-  const ret = { hits: 0, total: 0 };
-  const cov = file.coverage[type];
-  if (cov && cov.lines) {
-    for (const line of Object.values(cov.lines)) {
-      const hitsAndTotal = countCoverageForLine(line);
-      ret.hits += hitsAndTotal.hits;
-      ret.total += hitsAndTotal.total;
-    }
+  let config = {
+    datasets: {
+      dataset: { coverage: Object.keys(inputFiles).filter(x => x.endsWith('.info')) },
+    },
   }
-  return ret;
-}
+  const configSrc = inputFiles['config.json'];
+  if (configSrc) {
+    config = JSON.parse(configSrc);
+  }
+  if (Object.keys(config?.datasets ?? {}).length < 1) {
+    throw new Error('The config is malformed, does not contain a "datasets" field with at least one dataset.');
+  }
 
-export function loadData(inputFiles, enhance = {}) {
-  let config = {};
-  let visibility = {};
-  for (const type of Object.keys(store.types)) visibility[type] = store.types[type].visibility; // store previous visibility
-  store.types = {};
-  store.modules = {};
-  try {
-    const configFile = inputFiles['config.json'];
-    if (!configFile) {
-      console.log('No config file found. Will put all .info files into one generic coverage type.');
-      config = {
-        "datasets": {
-          "dataset1": {
-            "coverage": Object.keys(inputFiles).filter(x => x.includes('.info'))
-          }
-        }
-      }
-    }
-    else {
-      config = JSON.parse(configFile);
-      if (!(config?.datasets) || Object.keys(config.datasets).length < 1) {
-        throw new Error('The config is malformed, does not contain a "datasets" field with at least one dataset.');
-      }
-    }
+  if (config?.additional) {
+    config._additional = JSON.stringify(config.additional, null, '  ');
   }
-  catch (e) {
-    console.error(e);
-    return;
-  }
-  const sources = {};
+
+  const sources = Object.create(null);
   const sourcesFile = inputFiles['sources.txt'];
   if (sourcesFile) {
     const split = sourcesFile.split('### FILE: ');
     if (split.length > 1) {
-        for (let i = 1; i < split.length; i++) {
-          const nameContent = split[i].split('\n');
-          const name = nameContent.shift();
-          const content = nameContent.join('\n')
-          sources[name] = content;
+      for (let i = 1; i < split.length; i++) {
+        const nameContent = split[i].split('\n');
+        const name = removeLeadingSlashFromPath(nameContent.shift());
+        const content = nameContent.join('\n')
+        sources[name] = content;
+      }
+    }
+  }
+
+  /** @type {AllFiles} */
+  const allFiles = Object.create(null);
+  for (const [dataset, layout] of Object.entries(config.datasets)) {
+    for (let [coverageType, files] of Object.entries(layout)) {
+      /** @type {{[filename: string]: Record}} */
+      const records = Object.create(null);
+
+      files = Array.isArray(files) ? files : [files];
+      const infoFiles = files.filter(x => x.endsWith('.info'));
+      const descFiles = files.filter(x => x.endsWith('.desc'));
+
+      for (const infoFile of infoFiles) {
+        if (!(infoFile in inputFiles)) {
+          console.error(`File does not exist: ${infoFile}`);
+          return;
         }
-    }
-  }
 
-  if (!(store.selected_dataset in config.datasets)) {
-    const firstDataset = Object.keys(config.datasets)[0];
-    store.selected_dataset = firstDataset;
-  }
-
-  const layout = config.datasets[store.selected_dataset];
-  const types = Object.keys(layout);
-
-  const metadata = config;
-
-  const coverage = {};
-  for (let [k, v] of Object.entries(layout)) {
-    const infoFiles = (Array.isArray(v)) ? v : [v]; // if one file, make it into array of 1
-    for (let i = 0; i < infoFiles.length ; i++) {
-      if (!inputFiles[infoFiles[i]]) {
-        console.error(`file ${infoFiles[i]} was not loaded! Check if it's in the package.`);
-        return;
+        const label = `Loading .info file: ${infoFile}`;
+        console.time(label);
+        parseInfo(infoFile, inputFiles[infoFile], records);
+        console.timeEnd(label);
       }
-      if (infoFiles[i].split(".").pop() == "info") {
-         coverage[k] = (i == 0) ? parseInfo(infoFiles[i], inputFiles[infoFiles[i]]) : parseInfo(infoFiles[i], inputFiles[infoFiles[i]], coverage[k], true);
+
+      for (const descFile of descFiles) {
+        if (!descFile in infoFiles) {
+          console.error(`File does not exist: ${descFile}`);
+          return;
+        }
+
+        const label = `Loading .desc file: ${descFile}`;
+        console.time(label);
+        store.tests = toRaw(store.tests).union(parseDesc(descFile, inputFiles[descFile], records));
+        console.timeEnd(label);
       }
-    }
-  }
-  for (const [type, file] of Object.entries(enhance)) {
-    coverage[type] = parseInfo(file.name, file.content, coverage[type], true);
-  }
 
-  const filenames = Array.from(
-    new Set(types.flatMap(t => Object.keys(coverage[t]))),
-  );
-
-  const files = {};
-  for (const t of Object.keys(coverage)) {
-    for (const f of Object.keys(coverage[t])) {
-      if (!(f in files)) files[f] = {coverage: {}};
-      files[f].coverage[t] = { lines: coverage[t][f].lines };
-      if (f in sources) {
-        files[f].source = sources[f];
+      if (!(dataset in allFiles)) {
+        allFiles[dataset] = Object.create(null);
       }
-    }
-  }
 
-  function getModuleName(fileName) {
-    const moduleName = fileName.split("/").slice(0, -1).join("/");
-    if (!moduleName) {
-      // Fall-back, if the module doesn't exist (e.g. we were given just a bunch of files with no paths)
-      return metadata.repo || "./"
-    }
-    return moduleName;
-  }
-
-  const modules = Object.fromEntries(
-    Array.from(
-      new Set(filenames.map((n) => getModuleName(n))),
-    ).map((name) => [
-      name,
-      {
-        files: Object.fromEntries(
-          Object.entries(files)
-            .filter(([k,_]) => getModuleName(k) === name)
-            .map(([k,v]) => [k.split("/").at(-1), v]),
-        ),
-        coverage: {}
-      },
-    ]),
-  );
-
-  // count coverages for modules; for files it's trivial to count on the fly, total is also trivial once you have modules
-  for (const type of types) {
-    store.types[type] = { visibility: (visibility.hasOwnProperty(type) ? visibility[type] : true) };
-    for (const [name, m] of Object.entries(modules)) {
-      let hits = 0;
-      let total = 0;
-      for (const file of Object.values(m.files)) {
-        const fileResults = countCoverageForFile(file, type);
-        hits += fileResults.hits;
-        total += fileResults.total;
-      }
-      modules[name].coverage[type] = { hits: hits, total: total }
-    }
-  }
-
-  store.modules = modules;
-
-  for (let [k, v] of Object.entries(layout)) {
-    const infoFiles = (Array.isArray(v)) ? v : [v]; // if one file, make it into array of 1
-    for (let i = 0; i < infoFiles.length ; i++) {
-      if (!inputFiles[infoFiles[i]]) {
-        console.error(`file ${infoFiles[i]} was not loaded! Check if it's in the package.`);
-        return;
-      }
-      if (infoFiles[i].split(".").pop() == "desc") {
-        store.tests = toRaw(store.tests).union(parseDesc(inputFiles[infoFiles[i]], store.modules, k));
+      for (const [filename, record] of Object.entries(records)) {
+        if (!(filename in allFiles[dataset])) {
+          allFiles[dataset][filename] = {
+            records: Object.create(null),
+            source: sources[filename],
+          };
+        }
+        allFiles[dataset][filename].records[coverageType] = record;
       }
     }
   }
 
 
-  store.metadata = metadata;
-  if (metadata) {
-    if (metadata.additional) {
-     store.metadata._additional = JSON.stringify(store.metadata.additional, null, '  ');
+  /** @type {AllSummaries} */
+  const allSummaries = Object.create(null);
+  for(const [dataset, files] of Object.entries(allFiles)) {
+    const label = `Calculating summaries for dataset: ${dataset}`
+    console.time(label);
+    allSummaries[dataset] = Object.create(null);
+    fillSummary("", (allSummaries[dataset] = Object.create(null)), files, Object.keys(config.datasets[dataset]));
+    console.timeEnd(label);
+  }
+
+  // Set new data
+  caches.files = allFiles;
+  caches.summaries = allSummaries;
+  store.metadata = config;
+  selectDataset();
+
+  console.timeEnd("File loading");
+}
+
+export function unloadData() {
+  store.selectedDataset = "";
+  store.files = Object.create(null);
+  caches.files = Object.create(null);
+  store.summaries = Object.create(null);
+  caches.summaries = Object.create(null);
+  store.metadata = Object.create(null);
+  store.loadedFromFile = false;
+  store.hiddenCoverageTypes = Object.create(null);
+}
+
+/**
+ * @param {string} type
+ * @param {string} name
+ * @param {string} content
+ */
+export function loadAdditionalFile(type, name, content) {
+  /** @type {{[path: string]: Record}} */
+  const records = Object.fromEntries(Object.entries(store.files)
+    .map(entry => [entry[0], entry[1].records[type]])
+    .filter(entry => entry[1]));
+
+  if (name.endsWith(".info")) {
+    parseInfo(name, content, records);
+
+    // Recalculate summaries for the current dataset as values may have changed
+    const newSummary = Object.create(null);
+    fillSummary("", newSummary, store.files, availableCoverageTypes());
+    store.summaries = (caches.summaries[store.selectedDataset] = newSummary);
+  } else if (name.endsWith(".desc")) {
+    store.tests = toRaw(store.tests).union(parseDesc(name, content, records));
+  } else {
+    alert(`Unsupported file format for: ${name}`);
+  }
+}
+
+/**
+ * @param {string?} dataset
+ */
+export function selectDataset(dataset = null) {
+  const datasets = store?.metadata?.datasets ?? {};
+  if (!dataset || !(dataset in datasets)) {
+    // Default to the first dataset if non provided or the provided value is invalid
+    dataset = Object.keys(datasets)[0];
+  }
+
+  if (!dataset) {
+    return;
+  }
+
+  store.selectedDataset = dataset;
+  store.files = caches.files[dataset];
+  store.summaries = caches.summaries[dataset];
+}
+
+/**
+ * @param {string} path
+ * @param {Files?} files
+ * @returns {string[]}
+ */
+export function getPathChildren(path, files = null) {
+  if (!files) {
+    files = store.files;
+  }
+
+  if (!files) {
+    return [];
+  }
+
+  const results = new Set();
+  const pathComponents = path.split('/');
+  if (!pathComponents.at(-1)) {
+    pathComponents.pop(); // Remove empty strings at the end
+  }
+
+  for (const file of Object.keys(files)) {
+    const components = file.split('/');
+    if (pathComponents.length === 0) {
+      results.add(components[0]);
+      continue;
+    }
+
+    if (components.length <= pathComponents.length) {
+      // Only longer paths can be children of `path`
+      continue;
+    }
+
+    if (pathComponents.every((part, i) => part === components[i])) {
+      results.add(components[pathComponents.length]);
     }
   }
+
+  return Array.from(results);
+}
+
+/**
+ * @param {string} path
+ * @param {Files?} files
+ * @returns {"file" | "dir" | null}
+ */
+export function pathType(path, files = null) {
+  if (!files) {
+    files = store.files;
+  }
+
+  if (path == null || !files) {
+    return null;
+  }
+
+  // Check if the path is a file
+  if (path in files) {
+    return "file";
+  }
+
+  // Check if the path is a directory
+  const pathComponents = path.split('/');
+  if (!path.at(-1)) {
+    pathComponents.pop(); // Remove empty strings at the end
+  }
+
+  for (const file of Object.keys(files)) {
+    const components = file.split('/');
+    if (components.length < pathComponents.length) {
+      continue;
+    }
+
+    if (pathComponents.every((part, i) => part === components[i])) {
+      return "dir";
+    }
+  }
+
+  return null;
+}
+
+/**
+ * @param {string} path
+ * @param {CoverageSummary} summary
+ * @param {Files} files
+ * @param {string[]} coverageTypes
+ */
+function fillSummary(path, summary, files, coverageTypes) {
+  if (pathType(path, files) === "file") {
+    summary[path] = Object.fromEntries(coverageTypes.map(x => [x, { hits: 0, total: 0 }]));
+    for (const [type, record] of Object.entries(files[path].records)) {
+      const [hits, total] = record.stats;
+      summary[path][type].hits += hits;
+      summary[path][type].total += total;
+    }
+    return;
+  }
+
+  // Get full paths to each child
+  const children = getPathChildren(path, files).map(x => path.length === 0 ? x : `${path}/${x}`);
+  for (const child of children) {
+    fillSummary(child, summary, files, coverageTypes);
+  }
+
+  summary[path] = Object.fromEntries(coverageTypes.map(x => [x, { hits: 0, total: 0 }]));
+  for (const child of children) {
+    for (const [type, data] of Object.entries(summary[child])) {
+      summary[path][type].hits += data.hits;
+      summary[path][type].total += data.total;
+    }
+  }
+}
+
+export function availableCoverageTypes() {
+  if (store.metadata?.datasets && store.metadata.datasets[store.selectedDataset]) {
+    return Object.keys(store.metadata.datasets[store.selectedDataset]);
+  }
+  return []; // No coverage types available
 }
 
 export function getRateColor(rate, muted=false, grayscale=false) {
