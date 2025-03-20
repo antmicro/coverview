@@ -101,24 +101,4 @@ function parseInfo(filename, content, data = {}, enhance = false) {
   return data;
 }
 
-function serializeInfo(data) {
-  let output = [];
-  for (const d of Object.values(data)) {
-    output.push("SF:" + d.file + '\n');
-    for (const [number, cov] of Object.entries(d.lines)) {
-      if (cov.value) {
-        output.push("DA:"+number+','+cov.value);
-      }
-      if (cov.groups) {
-        for (const [name, group] of Object.entries(cov.groups)) {
-          for (const [info, data] of Object.entries(group)) {
-            output.push("BRDA:"+number+','+name+','+info+','+data.value)
-          }
-        }
-      }
-    }
-  }
-  return output.join('\n');
-}
-
-export { parseInfo, parseDesc, serializeInfo };
+export { parseInfo, parseDesc };
