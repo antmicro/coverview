@@ -2,8 +2,14 @@
 import { RouterView } from "vue-router";
 import Header from "./Header.vue";
 import Footer from "./Footer.vue";
+import LandingPage from "./LandingPage.vue";
 import { loadData, store, decompress } from "../store.js";
 import Info from "./Info.vue";
+import { computed } from "vue";
+
+const hasData = computed(() => {
+  return Object.keys(store.modules).length > 0;
+});
 
 async function load() {
   if (Object.keys(store.modules).length === 0) {
@@ -45,18 +51,18 @@ const default_links = {
 }
 </script>
 
-
 <template>
   <div class="app-container">
     <div class="content">
       <!-- those props should be read from some input file -->
       <Header :date="store.metadata.timestamp" :logo="store.metadata.logo || ''" :title="store.metadata.title || 'Dashboard'" :commit="store.metadata.commit || '?'" :branch="store.metadata.branch || '?'" :repo="store.metadata.repo || '?'"/>
-      <div class="page-wrapper">
-      <RouterView :key="$route.path" v-slot="{ Component }">
-        <Info :timestamp="store?.metadata?.timestamp"></Info>
-        <component :is="Component" />
-      </RouterView>
+      <div class="page-wrapper" v-if="hasData">
+        <RouterView :key="$route.path" v-slot="{ Component }">
+          <Info :timestamp="store?.metadata?.timestamp"></Info>
+          <component :is="Component" />
+        </RouterView>
       </div>
+      <LandingPage v-else />
     </div>
     <Footer :links="store.metadata.links || default_links" logo="logo.svg" copyright="Copyright Antmicro, 2023-2025." />
   </div>
@@ -95,6 +101,8 @@ const default_links = {
 
 .content {
   flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
 }
 
 footer {
