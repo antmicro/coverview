@@ -177,8 +177,7 @@ The `desc` file format is similar to `info`.
 It includes the following entries:
 
 ```
-TN:<test name>
-SF:<full path to the source file matching the entry in sources.info>
+SN:<full path to the source file matching the entry in sources.info>
 end_of_record
 ```
 
