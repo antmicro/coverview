@@ -10,7 +10,8 @@ export const store = reactive({
   types: {},             // available coverage types
   modules: {},           // coverage data aggregated by module
   metadata: {},          // other data
-  selected_dataset: ''   // the currently selected dataset
+  selected_dataset: '',  // the currently selected dataset
+  tests: new Set()       // available tests
 })
 
 export function getCoverage(module, file) {
@@ -202,7 +203,7 @@ export function loadData(inputFiles, enhance = {}) {
         return;
       }
       if (infoFiles[i].split(".").pop() == "desc") {
-         parseDesc(inputFiles[infoFiles[i]], store.modules, k);
+        store.tests = toRaw(store.tests).union(parseDesc(inputFiles[infoFiles[i]], store.modules, k));
       }
     }
   }

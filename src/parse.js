@@ -1,5 +1,7 @@
+// returns list of tests
 function parseDesc(content, modules, type) {
   console.log("Loading test description files");
+  const allTests = new Set();
   const content_lines = content.split('\n');
   let file = null;
   for (const cl of content_lines) {
@@ -28,10 +30,12 @@ function parseDesc(content, modules, type) {
       }
       lineInModule.source = new Set();
       for (const t of tests) {
+        allTests.add(t);
         lineInModule.source.add(t);
       }
     }
   }
+  return allTests;
 }
 
 function parseInfo(filename, content, data = {}, enhance = false) {

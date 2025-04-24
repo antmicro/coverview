@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import ListView from "../views/ListView.vue";
 import TreeView from "../views/TreeView.vue";
+import TestView from "../views/TestView.vue";
 import FileDetailsView from "../views/FileDetailsView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
 import { loadData, store } from '../store.js';
@@ -50,6 +51,10 @@ const router = createRouter({
       path: "/burndown",
       component: ListView,
       props: { burndown: true }
+    },
+    {
+      path: "/tests",
+      component: TestView
     },
     {
       path: "/:moduleName/:fileName",
