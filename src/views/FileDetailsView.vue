@@ -4,6 +4,7 @@ import { store, countCoverageForLine } from '../store.js';
 import { computed, ref, onMounted } from 'vue';
 
 const params = useRoute().params;
+const route = useRoute();
 const file = computed(() => store.modules[params.moduleName].files[params.fileName]);
 const code = file?.value?.source?.split('\n');
 const originThreshold = 10;
@@ -50,7 +51,10 @@ const toggleLineOrigins = (line, value) => {
   line.showOrigins.value = value;
 }
 
-onMounted(() => {
+const clearHighlight = () => document.querySelectorAll('.highlighted-line').forEach(el => el.classList.remove('highlighted-line'));
+const highlightLine = e => { clearHighlight(); e.target.closest('tr').classList.add('highlighted-line'); };
+
+onMounted(async () => {
   const main = document.querySelector('main');
   const scrollbar = document.querySelector('.sticky-scrollbar');
 
@@ -62,6 +66,15 @@ onMounted(() => {
     main.addEventListener('scroll', syncScroll);
     scrollbar.addEventListener('scroll', syncScroll);
     new ResizeObserver(updateWidth).observe(main);
+  }
+
+  if (route.hash) {
+    clearHighlight();
+    const lineEl = document.querySelector(route.hash);
+    if (lineEl) {
+      lineEl.scrollIntoView({ behavior: 'smooth' });
+      lineEl.closest('tr').classList.add('highlighted-line');
+    }
   }
 });
 </script>
@@ -76,8 +89,8 @@ onMounted(() => {
         <template v-for="line in lines" :key="line.n">
         <tr>
           <td>
-            <span style="margin-top: -286px; position: absolute;" :id="`line-${line.n}`"></span>
-            <RouterLink :to="{ hash: `#line-${line.n}`, query: { dataset: store.selected_dataset } }">{{ line.n }}</RouterLink>
+            <span style="margin-top: -300px; position: absolute;" :id="`line-${line.n}`"></span>
+            <RouterLink :to="{ hash: `#line-${line.n}`, query: { dataset: store.selected_dataset } }" @click="highlightLine">{{ line.n }}</RouterLink>
           </td>
           <td v-for="type in Object.keys(store.types)">
             <span :class="`${line.color} padded`">
@@ -279,5 +292,9 @@ span:hover .remarks ul .remark:last-child {
     border-bottom: 1px solid;
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
+}
+
+.highlighted-line {
+  border: 2px solid var(--accent-primary);
 }
 </style>
