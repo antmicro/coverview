@@ -33,8 +33,8 @@ function onDatasetChange(value) {
           {{$route.params.fileName || $route.params.moduleName || store.metadata.repo?.split("/").pop() || 'Overview'}}
         </h1>
       </div>
-      <div class="info-metadata">
-        <span class="metadata-item">Test timestamp: {{ timestamp ? (new Date(timestamp)).toLocaleString('sv') : '?' }}</span>
+      <div class="info-metadata" v-if="timestamp">
+        <span class="metadata-item">Test timestamp: {{ (new Date(timestamp)).toLocaleString('sv') }}</span>
       </div>
     </div>
     <Summary :module="$route.params.moduleName" :file="$route.params.fileName"></Summary>

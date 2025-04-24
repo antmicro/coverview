@@ -74,20 +74,20 @@ function reset() {
           <button class="reset" v-if="store.loadedFromFile" @click="reset"><img src="../assets/block.svg"></button>
         </div>
         <div class="nav-right">
-          <span class="info-item date">
+          <span class="info-item date" v-if="date">
             <img src="../assets/date.svg" alt="Date icon" />
             <span class="info-text">{{ date ? ((new Date(date)).toLocaleDateString('sv') + ' ' + (new Date(date)).toLocaleTimeString('sv')) : '?' }}</span>
           </span>
-          <span class="info-item repo">
+          <span class="info-item repo" v-if="repo">
             <img src="../assets/repo.svg" alt="Repo icon" />
             <a :href="repo" v-if="repo?.startsWith('https://') || repo?.startsWith('http://')">{{ repo?.split("/").pop() }}</a>
             <span class="info-text branch" v-else>{{ repo?.split("/").pop() }}</span>
           </span>
-          <span class="info-item branch">
+          <span class="info-item branch" v-if="branch">
             <img src="../assets/branch.svg" alt="Branch icon" />
             <span class="info-text branch">{{ branch }}</span>
           </span>
-          <span class="info-item commit">
+          <span class="info-item commit" v-if="commit">
             <img src="../assets/commit.svg" alt="Commit icon" />
             <span class="info-text commit">{{ commit.substring(0, 8) }}</span>
           </span>
