@@ -19,9 +19,9 @@ if (code) {
 function getColor(coverageData) {
   if (Object.keys(coverageData).length === 0) return "";
   const hitsAndTotal = Object.values(coverageData).reduce((acc, curr) => {return {hits: acc.hits + curr.hits, total: acc.total + curr.total}});
-  if (hitsAndTotal.hits == hitsAndTotal.total) return "green";
-  if (hitsAndTotal.hits == 0) return "red";
-  return "yellow";
+  if (hitsAndTotal.hits == hitsAndTotal.total) return "dimmed-green";
+  if (hitsAndTotal.hits == 0) return "dimmed-red";
+  return "dimmed-yellow";
 }
 
 let lines = computed(() => Array.from(Array(lineCount).keys())
@@ -110,7 +110,7 @@ onMounted(async () => {
             </span>
             <div v-if="line.showDetails.value === type">
               <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="padding-left: 20px; display: flex;">
-                <div :title="datapoint.value < 1 ? [...datapoint.zeroSource].join(' ') : [...datapoint.source].join(' ')" v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
+                <div :title="datapoint.value < 1 ? [...datapoint.zeroSource].join(' ') : [...datapoint.source].join(' ')" v-for="datapoint in g" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
               </div>
             </div>
           </td>
@@ -119,7 +119,7 @@ onMounted(async () => {
             <span :class="`${line.color} padded`">{{ code ? line.code : 'NO LINE SOURCE AVAILABLE' }}</span>
             <div v-if="line.showDetails.value !== ''">
               <div v-for="g in file.coverage[line.showDetails.value]?.lines[line.n].groups" style="display: flex;">
-                <div v-for="(datapoint, info) in g" :class="`${datapoint.value < 1 ? 'red' : 'green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
+                <div v-for="(datapoint, info) in g" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
               </div>
             </div>
           </td>
@@ -233,18 +233,6 @@ td:first-of-type {
 .padded {
   display: flex;
   align-items: center;
-}
-
-.green {
-  background: #042F2E;
-}
-
-.red {
-  background: #450A0A;
-}
-
-.yellow {
-  background: #854d0e;
 }
 
 .datapoint:first-of-type {

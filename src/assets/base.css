@@ -77,3 +77,19 @@ textarea {
   scrollbar-width: thin;
   scrollbar-color: #3f3f46 var(--bg-tetriary);
 }
+
+.dimmed-green {
+  background: #042F2E;
+}
+
+.dimmed-red {
+  background: #450A0A;
+}
+
+.dimmed-yellow {
+  background: #854d0e;
+}
+
+.green {
+  background: rgb(22, 101, 52);
+}

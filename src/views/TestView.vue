@@ -6,14 +6,14 @@ import { store } from '../store.js';
   <div class="table-container">
     <table>
       <thead>
-        <tr><th>#</th><th>Test group name</th><th>Status</th></tr>
+        <tr><th>#</th><th>Test group name</th><th class="center">Status</th></tr>
       </thead>
       <tbody>
         <template v-for="(item, index) in store.tests">
             <tr>
               <td>{{ index+1 }}</td>
               <td>{{ item }}</td>
-              <td class="success">OK</td>
+              <td class="green center">OK</td>
             </tr>
           </template>
       </tbody>
@@ -86,5 +86,9 @@ th {
     padding: 6px;
     font-size: 14px;
   }
+}
+
+.center {
+  text-align: center;
 }
 </style>
