@@ -48,7 +48,6 @@ function onDatasetChange(value) {
   z-index: 5;
   background: var(--bg-primary);
   display: flex;
-  margin-bottom: 2rem;
   padding: 3rem 0rem 2rem;
   border-bottom: 1px solid var(--border-primary);
 }
@@ -108,21 +107,7 @@ function onDatasetChange(value) {
   }
 }
 
-@media (min-width: 640px) {
   .info-section {
-    padding: 2rem 1rem 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .info-section {
-    padding: 3rem 2rem 2rem;
-  }
-}
-
-@media (min-width: 1440px) {
-  .info-section {
-    padding: 3rem 3rem 2rem;
-  }
+    padding: 1rem 0;
 }
 </style>

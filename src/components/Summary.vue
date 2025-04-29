@@ -82,39 +82,28 @@ th, td {
   text-align: center;
 }
 
-th {
-  font-weight: 500;
-  font-size: 0.875rem;
-}
-
 th.visibility > div {
   padding: 3px 0 0 0;
 }
 
-@media (min-width: 640px) {
-  th, td {
-    padding: 0.75rem 1rem;
-  }
-}
-
 @media (min-width: 1024px) {
-  th, td {
-    padding: 0.75rem 1.875rem;
-  }
-  
   .summary-table {
     min-width: auto;
   }
+  th, td {
+    font-size: 0.875rem;
+    padding: 0.375rem 1.75rem;
+  }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .summary-table {
     float: none;
     width: 100%;
     font-size: 0.875rem;
   }
   
-  th {
+  th, td {
     font-size: 0.75rem;
   }
 }
