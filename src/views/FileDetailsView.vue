@@ -1,14 +1,16 @@
 <script setup>
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { store, countCoverageForLine } from '../store.js';
 import { computed, ref, onMounted } from 'vue';
 
 const params = useRoute().params;
 const route = useRoute();
+const router = useRouter();
 const file = computed(() => store.modules[params.moduleName].files[params.fileName]);
 const code = file?.value?.source?.split('\n');
 const originThreshold = 10;
 let lineCount = 0;
+const selectedLineStart = ref(null);
 
 if (code) {
   lineCount = code.length;
@@ -51,8 +53,41 @@ const toggleLineOrigins = (line, value) => {
   line.showOrigins.value = value;
 }
 
+const setDecreasingZIndex = (lineNumber, element) => {
+  const baseZIndex = 1000;
+  element.style.zIndex = baseZIndex - lineNumber;
+};
+
 const clearHighlight = () => document.querySelectorAll('.highlighted-line').forEach(el => el.classList.remove('highlighted-line'));
-const highlightLine = e => { clearHighlight(); e.target.closest('tr').classList.add('highlighted-line'); };
+
+const highlightLine = e => { 
+  if (e.shiftKey) e.preventDefault();
+  
+  const lineNumber = parseInt(e.target.innerText);
+  
+  if (e.shiftKey && selectedLineStart.value !== null) {
+    clearHighlight();
+    const start = Math.min(selectedLineStart.value, lineNumber);
+    const end = Math.max(selectedLineStart.value, lineNumber);
+    
+    router.replace({ hash: `#L${start}-L${end}`, query: { dataset: store.selected_dataset } });
+    
+    for (let i = start; i <= end; i++) {
+      const el = document.querySelector(`#L${i}`);
+      if (el) {
+        const tr = el.closest('tr');
+        tr.classList.add('highlighted-line');
+        setDecreasingZIndex(i, tr); 
+      }
+    }
+  } else {
+    clearHighlight();
+    selectedLineStart.value = lineNumber;
+    const tr = e.target.closest('tr');
+    tr.classList.add('highlighted-line');
+    setDecreasingZIndex(lineNumber, tr); 
+  }
+};
 
 onMounted(async () => {
   const main = document.querySelector('main');
@@ -70,10 +105,34 @@ onMounted(async () => {
 
   if (route.hash) {
     clearHighlight();
-    const lineEl = document.querySelector(route.hash);
-    if (lineEl) {
-      lineEl.scrollIntoView({ behavior: 'smooth' });
-      lineEl.closest('tr').classList.add('highlighted-line');
+    
+    const rangeMatch = route.hash.match(/#L(\d+)-L(\d+)/);
+    if (rangeMatch) {
+      const [_, start, end] = rangeMatch.map(Number);
+      selectedLineStart.value = start;
+      
+      document.querySelector(`#L${start}`)?.scrollIntoView({ behavior: 'smooth' });
+      
+      for (let i = start; i <= end; i++) {
+        const tr = document.querySelector(`#L${i}`)?.closest('tr');
+        if (tr) {
+          tr.classList.add('highlighted-line');
+          setDecreasingZIndex(i, tr); 
+        }
+      }
+    } else {
+      const lineMatch = route.hash.match(/#L(\d+)/);
+      if (lineMatch) {
+        const lineNum = Number(lineMatch[1]);
+        const lineEl = document.querySelector(`#L${lineNum}`);
+        if (lineEl) {
+          lineEl.scrollIntoView({ behavior: 'smooth' });
+          const tr = lineEl.closest('tr');
+          tr.classList.add('highlighted-line');
+          setDecreasingZIndex(lineNum, tr);
+          selectedLineStart.value = lineNum;
+        }
+      }
     }
   }
 });
@@ -89,8 +148,8 @@ onMounted(async () => {
         <template v-for="line in lines" :key="line.n">
         <tr>
           <td>
-            <span style="margin-top: -300px; position: absolute;" :id="`line-${line.n}`"></span>
-            <RouterLink :to="{ hash: `#line-${line.n}`, query: { dataset: store.selected_dataset } }" @click="highlightLine">{{ line.n }}</RouterLink>
+            <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
+            <RouterLink :to="{ hash: `#L${line.n}`, query: { dataset: store.selected_dataset } }" @click="highlightLine">{{ line.n }}</RouterLink>
           </td>
           <td v-for="type in Object.keys(store.types)">
             <span :class="`${line.color} padded`">
@@ -99,7 +158,7 @@ onMounted(async () => {
                   <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
               </span>
               <span v-if="line.coverageData[type] && store.types[type].visibility">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
-                  <div class="remarks" @mouseleave="toggleLineOrigins(line, false)">
+                  <div class="remarks" @mouseleave="toggleLineOrigins(line, false)" @mouseenter="showRemarks($event, line)">
                       <ul>
                           <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>
                           <li class="remark" v-else v-for="origin in line.hitOrigins">{{origin}}</li>
@@ -206,7 +265,7 @@ th, td:not(:has(.padded)), .padded {
   }
 }
 table {
-  font-family: monospace;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
 }
 th {
@@ -251,7 +310,7 @@ span:hover .remarks {
     display: block;
     position: absolute;
     width: 100%;
-    z-index: 3;
+    z-index: 9999 !important;
 }
 
 span:hover .remarks ul {
@@ -283,6 +342,12 @@ span:hover .remarks ul .remark:last-child {
 }
 
 .highlighted-line {
-  border: 2px solid var(--accent-primary);
+  background-color: rgba(var(--accent-primary-rgb, 0, 120, 215), 0.15);
+  filter: brightness(1.3);
+  border: 1px solid rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4);
+}
+
+a.router-link-active {
+  color: var(--text-muted);
 }
 </style>
