@@ -48,6 +48,9 @@ export function countCoverageForLine(line) { // type not needed, since we're in 
       ret.hits += bits.filter(x => x.value > 0).length;
       ret.total += bits.length;
     }
+  } else if (store.tests.size !== 0 && line.source) {
+    ret.hits = line.source.size;
+    ret.total = store.tests.size;
   } else {
     ret.hits = (line.value > 0) ? 1 : 0;
     ret.total = 1;
