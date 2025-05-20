@@ -167,7 +167,7 @@ onMounted(async () => {
                   <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
               </span>
               <span v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
-                  <div class="remarks" @mouseleave="toggleLineOrigins(line, false)" @mouseenter="showRemarks($event, line)">
+                  <div class="remarks" @mouseleave="toggleLineOrigins(line, false)">
                       <ul>
                           <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>
                           <li class="remark" v-else v-for="origin in line.hitOrigins">{{origin}}</li>
