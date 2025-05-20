@@ -1,7 +1,7 @@
 import { reactive, toRaw } from 'vue'
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 import { XzReadableStream } from 'xz-decompress';
-import { Record, parseInfo, parseDesc, removeLeadingSlashFromPath } from './parse';
+import { Record, parseInfo, parseDesc, unifySourcePath } from './parse';
 
 /**
  * @typedef {{[coverageType: string]: Record}} Records
@@ -63,7 +63,7 @@ export function loadData(inputFiles) {
     if (split.length > 1) {
       for (let i = 1; i < split.length; i++) {
         const nameContent = split[i].split('\n');
-        const name = removeLeadingSlashFromPath(nameContent.shift());
+        const name = unifySourcePath(nameContent.shift());
         const content = nameContent.join('\n')
         sources[name] = content;
       }

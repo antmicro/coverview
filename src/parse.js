@@ -172,7 +172,7 @@ function *getRecords(filename, content, namePrefix = null) {
     const content = line.slice(separatorIndex + 1);
 
     if (prefix === namePrefix) {
-      name = removeLeadingSlashFromPath(content);
+      name = unifySourcePath(content);
       continue;
     }
 
@@ -235,8 +235,19 @@ export function parseDesc(filename, content, records) {
 
 /**
  * @param {string} path
- * @returns {string} Path without leading slash
+ * @returns {string} Unified path
  */
-export function removeLeadingSlashFromPath(path) {
-    return path.startsWith("/") ? path.slice(1) : path;
+export function unifySourcePath(path) {
+  var components = path.split("/")
+  var unifiedComponents = []
+
+  for (var comp of components) {
+    if (comp == ".." && unifiedComponents.length > 0) {
+      unifiedComponents.pop()
+    } else if (comp != "." && comp != "") {
+      unifiedComponents.push(comp)
+    }
+  }
+
+  return unifiedComponents.join('/')
 }
