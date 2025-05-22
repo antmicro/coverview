@@ -56,7 +56,7 @@ async function onFileUpload(event) {
 
   store.loadedFromFile = true;
   // need to handle "404"
-  router.push('/');
+  router.push({path: '/', query: route.query });
 };
 
 function reset() {
@@ -107,11 +107,11 @@ function reset() {
       </div>
       <ul class="breadcrumbs">
         <li>
-          <RouterLink :to="{ path: '/', query: { dataset: store.selectedDataset } }">{{ store.metadata.repo?.split("/").pop() || 'Overview' }}</RouterLink>
+          <RouterLink :to="{ path: '/', query: route.query }">{{ store.metadata.repo?.split("/").pop() || 'Overview' }}</RouterLink>
         </li>
         <li v-for="part in breadcrumbParts">
           <img src="../assets/caret.svg" alt="caret" />
-          <RouterLink :to="{ path: part.target, query: { dataset: store.selectedDataset } }">{{ part.name }}</RouterLink>
+          <RouterLink :to="{ path: part.target, query: route.query }">{{ part.name }}</RouterLink>
         </li>
       </ul>
     </nav>

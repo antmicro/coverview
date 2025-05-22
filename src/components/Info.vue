@@ -4,15 +4,20 @@ import DropdownSelect from "./DropdownSelect.vue";
 import { store, selectDataset, pathType } from '../store.js';
 import router from "../router/index.js";
 import { computed } from "vue";
+import { useRoute } from 'vue-router';
 
 const props = defineProps({
   timestamp: String,
   path: String,
 });
 
+const route = useRoute();
+
 function onDatasetChange(value) {
   selectDataset(value);
-  router.replace({ query: { dataset: store.selectedDataset } });
+  const query = Object.assign({}, route.query);
+  query.dataset = store.selectedDataset;
+  router.replace({ query: query });
 }
 
 const pathKind = computed(() => pathType(props.path));

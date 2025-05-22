@@ -79,7 +79,7 @@ const highlightLine = e => {
     const start = Math.min(selectedLineStart.value, lineNumber);
     const end = Math.max(selectedLineStart.value, lineNumber);
     
-    router.replace({ hash: `#L${start}-L${end}`, query: { dataset: store.selected_dataset } });
+    router.replace({ hash: `#L${start}-L${end}`, query: route.query });
     
     for (let i = start; i <= end; i++) {
       const el = document.querySelector(`#L${i}`);
@@ -158,7 +158,7 @@ onMounted(async () => {
         <tr>
           <td>
             <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
-            <RouterLink :to="{ hash: `#L${line.n}`, query: { dataset: store.selectedDataset } }" @click="highlightLine">{{ line.n }}</RouterLink>
+            <RouterLink :to="{ hash: `#L${line.n}`, query: route.query }" @click="highlightLine">{{ line.n }}</RouterLink>
           </td>
           <td v-for="type in coverageTypes">
             <span :class="`${line.color} padded`">

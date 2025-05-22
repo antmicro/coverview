@@ -1,6 +1,7 @@
 <script setup>
 import { store, getRateColor, getRate, availableCoverageTypes, getPathChildren, pathType } from '../store.js';
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import router from '../router/index.js';
 
 const props = defineProps({
@@ -8,6 +9,7 @@ const props = defineProps({
   modulePath: String,
 });
 
+const route = useRoute()
 const modulePath = computed(() => props.modulePath ?? "");
 const coverageTypes = computed(() => availableCoverageTypes());
 
@@ -59,7 +61,7 @@ const tableData = computed(() => {
 const buildRoute = (target) => {
   return {
     path: `/${encodeURIComponent(target)}`,
-    query: { dataset: store.selectedDataset },
+    query: route.query
   }
 }
 
