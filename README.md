@@ -117,6 +117,7 @@ There are four main sources of data:
   * `timestamp` - date and time of coverage in the ISO format
   * `additional` - a set of user-defined key-value pairs for additional information or run parameters
   * `tests_as_total` -  show executed tests out of total tests in line coverage
+  * `flat_file_list` - show sources as a flat list of files
 
   The `datasets` entry groups coverage info from related runs.
   You can use separate datasets to, e.g., indicate a different runtime, compilation options or used simulation environment.

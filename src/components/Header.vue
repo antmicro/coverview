@@ -44,17 +44,18 @@ async function onFileUpload(event) {
   let ext = file.name.split('.').pop();
 
   if (ext === 'zip' || ext == 'xz') {
-    loadData(await decompress(file.stream(), ext))
+    loadData(await decompress(file.stream(), ext), true)
   } else {
     let p = new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
       reader.readAsText(file);
     });
-    loadData({ [file.name]: await p })
+    loadData({ [file.name]: await p }, true)
   }
 
   store.loadedFromFile = true;
+
   // need to handle "404"
   router.push({path: '/', query: route.query });
 };

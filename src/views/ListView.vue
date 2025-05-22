@@ -34,6 +34,19 @@ const tableData = computed(() => {
 
     // sort by number of misses, descending
     return td.sort((a, b) => countMisses(b) - countMisses(a));
+  } else if (route.query.flatFileList == "true") {
+    const commonPrefixLen = modulePath.value.length +
+        (modulePath.value.length > 0 ? 1 : 0);
+    for (const path of Object.keys(store.files)) {
+      if(path.startsWith(modulePath.value)) {
+        td.push({
+          name: path.slice(commonPrefixLen),
+          path: path,
+          data: store.summaries[path] ?? {},
+        });
+      }
+    }
+    return td.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   const parent = modulePath.value ? `${modulePath.value}/` : '';

@@ -2,6 +2,7 @@ import { reactive, toRaw } from 'vue'
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 import { XzReadableStream } from 'xz-decompress';
 import { Record, parseInfo, parseDesc, unifySourcePath } from './parse';
+import router from './router/index.js'
 
 /**
  * @typedef {{[coverageType: string]: Record}} Records
@@ -34,7 +35,7 @@ const caches = reactive({
 /**
  * @param {{[filepath: string]: string}} inputFiles
  */
-export function loadData(inputFiles) {
+export function loadData(inputFiles, fromUploadedFile = false) {
   console.time("File loading");
 
   unloadData();
@@ -142,6 +143,15 @@ export function loadData(inputFiles) {
   caches.summaries = allSummaries;
   store.metadata = config;
   selectDataset();
+
+  // Set initial query
+  router.isReady().then(() => {
+    // When uploading new dataset, we want to reset query params and use metadata.
+    // Otherwise, we prefer current query params to enable URLs to produce reproducible views.
+    let initialQuery = fromUploadedFile ? {} : Object.assign({}, router.currentRoute.value.query);
+    initialQuery.flatFileList ??= store.metadata.flat_file_list ?? false;
+    router.push({ query: initialQuery });
+  });
 
   console.timeEnd("File loading");
 }
