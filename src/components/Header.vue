@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import router from '../router/index.js';
 import { store, loadData, unloadData, decompress } from '../store.js';
 import { RouterLink, useRoute } from 'vue-router';
+import ConfigMenu from './ConfigMenu.vue'
 
 const props = defineProps({
   date: String,
@@ -34,6 +35,7 @@ const breadcrumbParts = computed(() => {
 
 const showFilePicker = Object.keys(originalFiles).length === 0;
 
+const dataLoaded = computed(() => store.dataLoaded)
 
 async function onFileUpload(event) {
   const file = event.target.files[0];
@@ -104,6 +106,7 @@ function reset() {
           <span class="info-item metadata" v-if="store?.metadata?._additional">
             <img src="../assets/fingerprint.svg" alt="Metadata icon" :title="store.metadata._additional" />
           </span>
+          <ConfigMenu v-if="dataLoaded"/>
         </div>
       </div>
       <ul class="breadcrumbs">

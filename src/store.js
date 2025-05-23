@@ -19,6 +19,7 @@ export const store = reactive({
   /** @type {CoverageSummary} */
   summaries: Object.create(null),
   metadata: Object.create(null),
+  dataLoaded: false,
   loadedFromFile: false,
   hiddenCoverageTypes: Object.create(null),
   selectedDataset: "",
@@ -143,6 +144,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
   caches.summaries = allSummaries;
   store.metadata = config;
   selectDataset();
+  store.dataLoaded = true
 
   // Set initial query
   router.isReady().then(() => {
