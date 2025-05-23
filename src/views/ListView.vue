@@ -86,6 +86,10 @@ const hitCountText = (item) => {
   return item.hits;
 }
 
+function shouldShowEntry(item) {
+  return route.query.hideNotCovered != "true" || coverageTypes.value.some(type => item.data[type].total > 0)
+}
+
 </script>
 
 <template>
@@ -114,31 +118,33 @@ const hitCountText = (item) => {
         </tr>
       </thead>
       <tbody>
-        <tr class="link" @click="router.push(buildRoute(item.path))" v-for="item in tableData" :key="item.path">
-          <td class="name">
-            <img v-if="pathType(item.path) === 'file'" src="../assets/file.svg" alt="file" />
-            <img v-else src="../assets/module.svg" alt="module" />
-            {{ item.name }}
-          </td>
-          <template v-for="name in coverageTypes">
-            <td class="rate-cell">
-              <div class="progress-wrapper">
-                <div class="progress-container">
-                  <div
-                    class="progress-bar"
-                    :style="{
-                      width: `${getRate(item.data[name])}%`,
-                      backgroundColor: getRateColor(getRate(item.data[name]), false, store.hiddenCoverageTypes[name]),
-                    }"
-                  ></div>
-                </div>
-                <span class="rate-value" :style="{ color: getRateColor(getRate(item.data[name]), false, store.hiddenCoverageTypes[name]) }"> {{ getRate(item.data[name]) }}% </span>
-              </div>
+        <template v-for="item in tableData" >
+          <tr class="link" @click="router.push(buildRoute(item.path))" v-if="shouldShowEntry(item)" :key="item.path">
+            <td class="name">
+              <img v-if="pathType(item.path) === 'file'" src="../assets/file.svg" alt="file" />
+              <img v-else src="../assets/module.svg" alt="module" />
+              {{ item.name }}
             </td>
-            <td class="hit-cell">{{ hitCountText(item.data[name]) }}</td>
-            <td class="total-cell">{{ item.data[name]?.total || 'N/A' }}</td>
-          </template>
-        </tr>
+            <template v-for="name in coverageTypes">
+              <td class="rate-cell">
+                <div class="progress-wrapper">
+                  <div class="progress-container">
+                    <div
+                      class="progress-bar"
+                      :style="{
+                        width: `${getRate(item.data[name])}%`,
+                        backgroundColor: getRateColor(getRate(item.data[name]), false, store.hiddenCoverageTypes[name]),
+                      }"
+                    ></div>
+                  </div>
+                  <span class="rate-value" :style="{ color: getRateColor(getRate(item.data[name]), false, store.hiddenCoverageTypes[name]) }"> {{ getRate(item.data[name]) }}% </span>
+                </div>
+              </td>
+              <td class="hit-cell">{{ hitCountText(item.data[name]) }}</td>
+              <td class="total-cell">{{ item.data[name]?.total || 'N/A' }}</td>
+            </template>
+          </tr>
+        </template>
       </tbody>
     </table>
   </div>

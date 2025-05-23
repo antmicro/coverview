@@ -150,6 +150,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     // Otherwise, we prefer current query params to enable URLs to produce reproducible views.
     let initialQuery = fromUploadedFile ? {} : Object.assign({}, router.currentRoute.value.query);
     initialQuery.flatFileList ??= store.metadata.flat_file_list ?? false;
+    initialQuery.hideNotCovered ??= store.metadata.hide_not_covered ?? false;
     router.push({ query: initialQuery });
   });
 
