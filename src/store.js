@@ -122,6 +122,11 @@ export function loadData(inputFiles) {
   }
 
 
+  if (Object.values(allFiles).every(value => Object.keys(value).length === 0)) {
+    alert(`No dataset found. Is this a valid Coverview archive?`);
+    return;
+  }
+
   /** @type {AllSummaries} */
   const allSummaries = Object.create(null);
   for(const [dataset, files] of Object.entries(allFiles)) {
