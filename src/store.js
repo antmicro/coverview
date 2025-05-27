@@ -1,4 +1,4 @@
-import { reactive, toRaw } from 'vue'
+import { reactive, toRaw, ref } from 'vue'
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 import { XzReadableStream } from 'xz-decompress';
 import { Record, parseInfo, parseDesc, unifySourcePath } from './parse';
@@ -25,6 +25,7 @@ export const store = reactive({
   selectedDataset: "",
   tests: new Set(),
   hasSources: false,
+  showSearchWindow: ref(false)
 });
 
 const caches = reactive({

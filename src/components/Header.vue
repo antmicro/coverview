@@ -1,9 +1,10 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import router from '../router/index.js';
 import { store, loadData, unloadData, decompress } from '../store.js';
 import { RouterLink, useRoute } from 'vue-router';
 import ConfigMenu from './ConfigMenu.vue'
+import SearchWindow from './SearchWindow.vue'
 
 const props = defineProps({
   date: String,
@@ -15,6 +16,19 @@ const props = defineProps({
 })
 
 const route = useRoute();
+
+document.addEventListener("keyup", (e) => {
+  if (e.ctrlKey && e.key == 'k') {
+    e.preventDefault();
+    store.showSearchWindow = !store.showSearchWindow;
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key == 'k') {
+    e.preventDefault();
+  }
+});
 
 const breadcrumbParts = computed(() => {
   const result = [];
@@ -83,7 +97,7 @@ function reset() {
             <img src="../assets/upload.svg" alt="upload">
             <input type="file" id="fileInput" accept=".xz, .zip, .info" @change="onFileUpload($event)">
           </label>
-          <button class="reset" v-if="store.loadedFromFile" @click="reset"><img src="../assets/block.svg"></button>
+          <button class="header-button" v-if="store.loadedFromFile" @click="reset"><img src="../assets/block.svg"></button>
         </div>
         <div class="nav-right">
           <span class="info-item date" v-if="date">
@@ -106,6 +120,9 @@ function reset() {
           <span class="info-item metadata" v-if="store?.metadata?._additional">
             <img src="../assets/fingerprint.svg" alt="Metadata icon" :title="store.metadata._additional" />
           </span>
+          <button class="header-button" v-if="dataLoaded" @click="store.showSearchWindow = true">
+            <img src="../assets/search.svg">
+          </button>
           <ConfigMenu v-if="dataLoaded"/>
         </div>
       </div>
@@ -120,6 +137,7 @@ function reset() {
       </ul>
     </nav>
   </header>
+  <SearchWindow v-if="store.showSearchWindow"/>
 </template>
 
 <style scoped>
@@ -155,7 +173,7 @@ input[type="file"] {
   display: none;
 }
 
-.reset {
+.header-button {
   background: none;
   border: none;
 }
