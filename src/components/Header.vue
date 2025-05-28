@@ -148,15 +148,6 @@ function reset() {
   gap: 1rem;
 }
 
-.file-input, .reset {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-:is(.file-input, .reset):hover {
-  cursor: pointer;
-}
-
 input[type="file"] {
   display: none;
 }
@@ -265,5 +256,27 @@ li > img {
     gap: 0.5rem;
     flex-wrap: wrap;
   }
+}
+</style>
+
+<style>
+header :is(button, .file-input) {
+  border: none;
+  background: none;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+header :is(button, .file-input):hover {
+  cursor: pointer;
+  background: var(--border-primary);
+}
+
+header :is(button, .file-input) img {
+  width: 1.375rem;
+  height: 1.375rem;
 }
 </style>
