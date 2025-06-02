@@ -24,6 +24,15 @@ const hideNotCovered = computed({
     router.replace({ query: { ...route.query, hideNotCovered: newValue }});
   }
 })
+
+const burndown = computed({
+  get() {
+    return route.query.burndown == "true";
+  },
+  set(newValue) {
+    router.replace({ query: { ...route.query, burndown: newValue }});
+  }
+})
 </script>
 
 <template>
@@ -31,6 +40,12 @@ const hideNotCovered = computed({
     <img src="../assets/settings.svg"/>
   </button>
   <div class="config-menu-container" v-if="isOpen">
+    <div class="switch-container">
+      <input id="burndown-checkbox" type="checkbox" v-model="burndown"/>
+      <label for="burndown-checkbox" class="switch"/>
+      <label for="burndown-checkbox" class="config-menu-label">Burndown</label>
+    </div>
+    <hr class="config-menu-separator"/>
     <div class="switch-container">
       <input id="flat-file-list-checkbox" type="checkbox" v-model="flatFileList"/>
       <label for="flat-file-list-checkbox" class="switch"/>
