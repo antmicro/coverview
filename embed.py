@@ -1,6 +1,7 @@
 #!/bin/env python3
 
 index_filename = "dist/index.html"
+index_backup_filename = "dist/index.html.bak"
 # Add more files + arguments for choosing names when this all works
 
 import argparse
@@ -8,6 +9,7 @@ import base64
 import json
 import os
 from pathlib import Path
+import shutil
 import re
 
 parser = argparse.ArgumentParser()
@@ -22,6 +24,11 @@ if (args.inject_data and args.fetch_data):
     sys.exit(1)
 
 original_snippet = 'let originalFiles = {}'
+
+if os.path.exists(index_backup_filename):
+    shutil.copy(index_backup_filename, index_filename)
+else:
+    shutil.copy(index_filename, index_backup_filename)
 
 with open(index_filename, 'r+') as f:
     content = f.read()
