@@ -28,12 +28,14 @@ const tableData = computed(() => {
 
   if (route.query.burndown == "true") {
     const countMisses = x => {
+      let total = 0;
       let misses = 0;
       for (let t of Object.values(x.data)) {
+        total += t.total;
         misses += t.total - t.hits;
       }
       // We want to put files without coverage at the end
-      return misses;
+      return total > 0 ? misses : -1;
     }
     // sort by number of misses, descending
     return td.sort((a, b) => countMisses(b) - countMisses(a));
