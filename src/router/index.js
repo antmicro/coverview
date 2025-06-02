@@ -39,15 +39,6 @@ const router = createRouter({
       component: TreeView,
     },
     {
-      path: "/burndown",
-      component: ListView,
-      props: { burndown: true },
-      beforeEnter: async (to, _) => {
-        await store.loaded;
-        selectDataset(to.query.dataset);
-      }
-    },
-    {
       path: "/tests",
       component: TestView
     },

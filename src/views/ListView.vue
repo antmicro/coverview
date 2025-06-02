@@ -5,7 +5,6 @@ import { useRoute } from 'vue-router';
 import router from '../router/index.js';
 
 const props = defineProps({
-  burndown: Boolean,
   modulePath: String,
 });
 
@@ -14,52 +13,30 @@ const modulePath = computed(() => props.modulePath ?? "");
 const coverageTypes = computed(() => availableCoverageTypes());
 
 const tableData = computed(() => {
-  const td = [];
-  if (props.burndown) {
+  const flatList = route.query.flatFileList == "true";
+  const parent = modulePath.value ? `${modulePath.value}/` : '';
+
+  const files = flatList ?
+    Object.keys(store.files).filter(path => path.startsWith(modulePath.value)) :
+    getPathChildren(modulePath.value);
+
+  const td = files.map(path => ({
+    name: path,
+    path: flatList ? path : `${parent}${path}`,
+    data: store.summaries[flatList ? path : `${parent}${path}`] ?? {},
+  }));
+
+  if (route.query.burndown == "true") {
     const countMisses = x => {
       let misses = 0;
       for (let t of Object.values(x.data)) {
         misses += t.total - t.hits;
       }
+      // We want to put files without coverage at the end
       return misses;
     }
-
-    for (const path of Object.keys(store.files)) {
-      td.push({
-        name: path,
-        path: path,
-        kind: pathType(path),
-        data: store.summaries[path] ?? {},
-      });
-    }
-
     // sort by number of misses, descending
     return td.sort((a, b) => countMisses(b) - countMisses(a));
-  } else if (route.query.flatFileList == "true") {
-    const commonPrefixLen = modulePath.value.length +
-        (modulePath.value.length > 0 ? 1 : 0);
-    for (const path of Object.keys(store.files)) {
-      if(path.startsWith(modulePath.value)) {
-        td.push({
-          name: path.slice(commonPrefixLen),
-          path: path,
-          kind: pathType(path),
-          data: store.summaries[path] ?? {},
-        });
-      }
-    }
-    return td.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  const parent = modulePath.value ? `${modulePath.value}/` : '';
-  for (const child of getPathChildren(parent)) {
-    const fullPath = `${parent}${child}`;
-    td.push({
-      name: child,
-      path: fullPath,
-      kind: pathType(fullPath),
-      data: store.summaries[fullPath] ?? {},
-    });
   }
 
   return td.sort((a,b) => {
