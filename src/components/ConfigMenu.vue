@@ -1,7 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue';
 import router from '../router/index.js';
-import { RouterLink, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
+import { store } from "../store";
 
 const route = useRoute();
 
@@ -33,6 +34,27 @@ const burndown = computed({
     router.replace({ query: { ...route.query, burndown: newValue }});
   }
 })
+
+const testsAsTotal = computed({
+  get() {
+    return route.query.testsAsTotal == "true";
+  },
+  set(newValue) {
+    store.testsAsTotal = newValue;
+    router.replace({ query: { ...route.query, testsAsTotal: newValue }});
+  }
+})
+
+const warningThreshold = computed({
+  get() {
+    return route.query.warningThreshold;
+  },
+  set(newValue) {
+    store.metadata.warning_threshold = newValue;
+    router.replace({ query: { ...route.query, warningThreshold: newValue }});
+  }
+})
+
 </script>
 
 <template>
@@ -56,6 +78,17 @@ const burndown = computed({
       <input id="hide-not-covered-checkbox" type="checkbox" v-model="hideNotCovered"/>
       <label for="hide-not-covered-checkbox" class="switch"/>
       <label for="hide-not-covered-checkbox" class="config-menu-label">Hide files without coverage</label>
+    </div>
+    <hr class="config-menu-separator"/>
+    <div class="switch-container">
+      <input id="tests-as-total-checkbox" type="checkbox" v-model="testsAsTotal"/>
+      <label for="tests-as-total-checkbox" class="switch"/>
+      <label for="tests-as-total-checkbox" class="config-menu-label">Use total number of tests as total</label>
+    </div>
+    <hr class="config-menu-separator"/>
+    <div class="switch-container">
+      <input id="warning-threshold-inupt" type="number" placeholder="50" v-model="warningThreshold"/>
+      <label for="warning-threshold-inupt" class="config-menu-label">% threshold for coverage warning colouring</label>
     </div>
   </div>
 </template>
@@ -94,7 +127,7 @@ const burndown = computed({
   line-height: 24px;
 }
 
-.switch-container input {
+input[type="checkbox"] {
   display: none;
 }
 
@@ -112,6 +145,19 @@ const burndown = computed({
   height: 20px;
   background-color: var(--bg-secondary);
   border-radius: 20px;
+  transition: background-color 0.3s;
+  cursor: pointer;
+}
+
+input[type="number"] {
+  display: inline-block;
+  width: 56px;
+  height: 20px;
+  padding: 4px;
+  background-color: var(--bg-secondary);
+  border-radius: 10px;
+  border: none;
+  color: white;
   transition: background-color 0.3s;
   cursor: pointer;
 }

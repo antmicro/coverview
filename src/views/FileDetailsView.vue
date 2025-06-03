@@ -1,7 +1,7 @@
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { store, availableCoverageTypes } from '../store.js';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 
 const props = defineProps({
   fileName: String,
@@ -10,13 +10,11 @@ const props = defineProps({
 /** @type {{value: File}} */
 const file = computed(() => store.files[props.fileName]);
 const coverageTypes = computed(() => availableCoverageTypes());
-const params = useRoute().params;
 const route = useRoute();
 const router = useRouter();
 const code = file.value.source?.split('\n');
 const originThreshold = 10;
 let lineCount = 0;
-const selectedLineStart = ref(null);
 
 if (!store.hasSources) {
   lineCount = 0;
@@ -26,35 +24,47 @@ if (!store.hasSources) {
   lineCount = Math.max(...(Object.values(file.value.records).map(x => x.lines.length)));
 }
 
-function getColor(coverageData) {
+/** Here **/
+function getColor(coverageData, threshold) {
   if (Object.keys(coverageData).length === 0) return "";
   const hitsAndTotal = Object.values(coverageData).reduce((acc, curr) => {return {hits: acc.hits + curr.hits, total: acc.total + curr.total}});
-  if (hitsAndTotal.hits == hitsAndTotal.total) return "dimmed-green";
-  if (hitsAndTotal.hits == 0) return "dimmed-red";
-  return "dimmed-yellow";
+
+  if (hitsAndTotal.hits == hitsAndTotal.total) {
+    return "dimmed-green";
+  } else  if (hitsAndTotal.hits == 0) {
+    return "dimmed-red";
+  } else {
+    if (!('warning_threshold' in store.metadata)) {
+      return "dimmed-yellow";
+    }
+    if (threshold < 1) {
+        threshold = Math.floor(hitsAndTotal.total * threshold);
+    }
+    return hitsAndTotal.hits >= threshold ? "dimmed-green" : "dimmed-yellow";
+  }
 }
 
 const lines = computed(() => Array.from(Array(lineCount).keys())
-  .map(i => {
-    const coverageData = {};
-    let hasGroups = Object.create(null);
-    let hitOrigins = []; // this is a bit hacky, as we only have "line" inside the loop
-    // we use hitOrigins as the tests which hit the line since "source" is confusing
-    for (const [type, record] of Object.entries(file.value.records)) {
-      if (!store.hiddenCoverageTypes[type]) {
-        const line = record.lines[i+1];
-        if (line) {
-          hasGroups[type] = line.hasGroups;
-          const [hits, total] = line.stats;
-          coverageData[type] = { hits, total };
-          hitOrigins = Array.from(line.sources);
+    .map(i => {
+      const coverageData = {};
+      let hasGroups = Object.create(null);
+      let hitOrigins = []; // this is a bit hacky, as we only have "line" inside the loop
+      // we use hitOrigins as the tests which hit the line since "source" is confusing
+      for (const [type, record] of Object.entries(file.value.records)) {
+        if (!store.hiddenCoverageTypes[type]) {
+          const line = record.lines[i + 1];
+          if (line) {
+            hasGroups[type] = line.hasGroups;
+            const [hits, total] = line.stats;
+            coverageData[type] = { hits, total };
+            hitOrigins = Array.from(line.sources);
+          }
         }
       }
-    }
-    const lineData = {n: i+1, coverageData, color: getColor(coverageData), showDetails: ref(''), showOrigins: ref(false), hitOrigins, hasGroups };
-    if (code) lineData.code = code[i];
-    return lineData;
- }));
+      const lineData = { n: i + 1, coverageData, color: getColor(coverageData, store.metadata.warning_threshold), showDetails: ref(''), showOrigins: ref(false), hitOrigins, hasGroups };
+      if (code) lineData.code = code[i];
+      return lineData;
+    }));
 
 const toggleDetails = (line, type) => {
   line.showDetails.value = (line.showDetails.value === type) ? '' : type;

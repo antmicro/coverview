@@ -1,3 +1,4 @@
+import { computed } from 'vue'
 import { store } from './store'
 
 class SubGroup {
@@ -52,6 +53,24 @@ class Line {
     this.groups = null;
     /** @type {Set<string>} */
     this.sources = new Set();
+    this.stats = computed(() => {
+      let hits = 0;
+      let totals = 0;
+      if (this.hasGroups) {
+        for (const group of Object.values(this.groups)) {
+          const [groupHits, groupTotals] = group.stats;
+          hits += groupHits;
+          totals += groupTotals;
+        }
+      } else if (store.testsAsTotal && store.tests.size !== 0 && this.sources) {
+        hits = this.sources.size;
+        totals = store.tests.size;
+      } else {
+        hits = this.value > 0 ? 1 : 0;
+        totals = 1;
+      }
+      return [hits, totals];
+    })
   }
 
   /**
@@ -74,26 +93,6 @@ class Line {
       return (this.groups[name] = new Group());
     }
     return this.groups[name];
-  }
-
-  /** @type {[hits: number, total: number]} */
-  get stats() {
-    let hits = 0;
-    let totals = 0;
-    if (this.hasGroups) {
-      for (const group of Object.values(this.groups)) {
-        const [groupHits, groupTotals] = group.stats;
-        hits += groupHits;
-        totals += groupTotals;
-      }
-    } else if (store.metadata.tests_as_total === true && store.tests.size !== 0 && this.sources) {
-      hits = this.sources.size;
-      totals = store.tests.size;
-    } else {
-      hits = this.value > 0 ? 1 : 0;
-      totals = 1;
-    }
-    return [hits, totals];
   }
 
   /** @type {boolean} */

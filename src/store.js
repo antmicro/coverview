@@ -1,4 +1,4 @@
-import { reactive, toRaw, ref } from 'vue'
+import { reactive, computed, toRaw, ref } from 'vue'
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 import { XzReadableStream } from 'xz-decompress';
 import { Record, parseInfo, parseDesc, unifySourcePath } from './parse';
@@ -17,10 +17,15 @@ export const store = reactive({
   /** @type {Files} */
   files: Object.create(null),
   /** @type {CoverageSummary} */
-  summaries: Object.create(null),
+  summaries: computed(() => {
+    let summary = Object.create(null);
+    fillSummary("", summary, store.files, Object.keys(store.metadata.datasets[store.selectedDataset]));
+    return summary;
+  }),
   metadata: Object.create(null),
   dataLoaded: false,
   loadedFromFile: false,
+  testsAsTotal: false,
   hiddenCoverageTypes: Object.create(null),
   selectedDataset: "",
   tests: new Set(),
@@ -31,9 +36,24 @@ export const store = reactive({
 const caches = reactive({
   /** @type {AllFiles} */
   files: Object.create(null),
-  /** @type {AllSummaries} */
-  summaries: Object.create(null),
 });
+
+function parse_warning_threshold(value) {
+    if(value.endsWith("%")){
+       value = parseFloat(value.slice(0, -1));
+       if (value !== NaN) {
+         value = value / 100;
+       }
+    } else {
+       value = parseFloat(value);
+    }
+
+    if (value === NaN) {
+      alert("Invalid config: warning_threshold is not an number")
+      return;
+    }
+    return value;
+  }
 
 /**
  * @param {{[filepath: string]: string}} inputFiles
@@ -58,6 +78,10 @@ export function loadData(inputFiles, fromUploadedFile = false) {
 
   if (config?.additional) {
     config._additional = JSON.stringify(config.additional, null, '  ');
+  }
+
+  if ('warning_threshold' in config) {
+    config.warning_threshold = parse_warning_threshold(config.warning_threshold);
   }
 
   const sources = Object.create(null);
@@ -130,34 +154,25 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     alert(`No dataset found. Is this a valid Coverview archive?`);
     return;
   }
-
-  /** @type {AllSummaries} */
-  const allSummaries = Object.create(null);
-  for(const [dataset, files] of Object.entries(allFiles)) {
-    const label = `Calculating summaries for dataset: ${dataset}`
-    console.time(label);
-    allSummaries[dataset] = Object.create(null);
-    fillSummary("", (allSummaries[dataset] = Object.create(null)), files, Object.keys(config.datasets[dataset]));
-    console.timeEnd(label);
-  }
-
-  // Set new data
-  caches.files = allFiles;
-  caches.summaries = allSummaries;
-  store.metadata = config;
-  store.hasSources = !!sourcesFile;
-  selectDataset();
-  store.dataLoaded = true
-
   // Set initial query
   router.isReady().then(() => {
     // When uploading new dataset, we want to reset query params and use metadata.
     // Otherwise, we prefer current query params to enable URLs to produce reproducible views.
     let initialQuery = fromUploadedFile ? {} : Object.assign({}, router.currentRoute.value.query);
-    initialQuery.flatFileList ??= store.metadata.flat_file_list ?? false;
-    initialQuery.hideNotCovered ??= store.metadata.hide_not_covered ?? false;
+    initialQuery.flatFileList ??= config.flat_file_list ?? false;
+    initialQuery.hideNotCovered ??= config.hide_not_covered ?? false;
+    initialQuery.testsAsTotal ??= config.tests_as_total ?? false;
     router.push({ query: initialQuery });
   });
+  console.log("router init config is now set");
+
+  // Set new data
+  caches.files = allFiles;
+  store.metadata = config;
+  store.hasSources = !!sourcesFile;
+  selectDataset();
+  store.dataLoaded = true
+
 
   console.timeEnd("File loading");
 }
@@ -166,8 +181,6 @@ export function unloadData() {
   store.selectedDataset = "";
   store.files = Object.create(null);
   caches.files = Object.create(null);
-  store.summaries = Object.create(null);
-  caches.summaries = Object.create(null);
   store.metadata = Object.create(null);
   store.loadedFromFile = false;
   store.hiddenCoverageTypes = Object.create(null);
@@ -187,10 +200,6 @@ export function loadAdditionalFile(type, name, content) {
   if (name.endsWith(".info")) {
     parseInfo(name, content, records);
 
-    // Recalculate summaries for the current dataset as values may have changed
-    const newSummary = Object.create(null);
-    fillSummary("", newSummary, store.files, availableCoverageTypes());
-    store.summaries = (caches.summaries[store.selectedDataset] = newSummary);
   } else if (name.endsWith(".desc")) {
     store.tests = toRaw(store.tests).union(parseDesc(name, content, records));
   } else {
@@ -214,7 +223,6 @@ export function selectDataset(dataset = null) {
 
   store.selectedDataset = dataset;
   store.files = caches.files[dataset];
-  store.summaries = caches.summaries[dataset];
 }
 
 /**
