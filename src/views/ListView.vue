@@ -28,6 +28,7 @@ const tableData = computed(() => {
       td.push({
         name: path,
         path: path,
+        kind: pathType(path),
         data: store.summaries[path] ?? {},
       });
     }
@@ -42,6 +43,7 @@ const tableData = computed(() => {
         td.push({
           name: path.slice(commonPrefixLen),
           path: path,
+          kind: pathType(path),
           data: store.summaries[path] ?? {},
         });
       }
@@ -55,16 +57,15 @@ const tableData = computed(() => {
     td.push({
       name: child,
       path: fullPath,
+      kind: pathType(fullPath),
       data: store.summaries[fullPath] ?? {},
     });
   }
 
   return td.sort((a,b) => {
-    const aType = pathType(a.path);
-    const bType = pathType(b.path);
-    if (aType !== bType) {
+    if (a.kind !== b.kind) {
       // Show directories before files
-      return aType === "file" ? 1 : -1;
+      return a.kind === "file" ? 1 : -1;
     }
     // sort alphabetically otherwise
     return a.name.localeCompare(b.name);
@@ -121,7 +122,7 @@ function shouldShowEntry(item) {
         <template v-for="item in tableData" >
           <tr class="link" @click="router.push(buildRoute(item.path))" v-if="shouldShowEntry(item)" :key="item.path">
             <td class="name">
-              <img v-if="pathType(item.path) === 'file'" src="../assets/file.svg" alt="file" />
+              <img v-if="item.kind === 'file'" src="../assets/file.svg" alt="file" />
               <img v-else src="../assets/module.svg" alt="module" />
               {{ item.name }}
             </td>
