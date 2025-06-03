@@ -72,10 +72,14 @@ const tableData = computed(() => {
   });
 });
 
-const buildRoute = (target) => {
-  return {
-    path: `/${encodeURIComponent(target)}`,
-    query: route.query
+const isItemInteractible = (item) => item.kind !== "file" || store.hasSources;
+
+const pathClickCallback = (item) => {
+  if (isItemInteractible(item)) {
+    router.push({
+      path: `/${encodeURIComponent(item.path)}`,
+      query: route.query,
+    });
   }
 }
 
@@ -120,7 +124,7 @@ function shouldShowEntry(item) {
       </thead>
       <tbody>
         <template v-for="item in tableData" >
-          <tr class="link" @click="router.push(buildRoute(item.path))" v-if="shouldShowEntry(item)" :key="item.path">
+          <tr :class="{ link: isItemInteractible(item) }" @click="pathClickCallback(item)" v-if="shouldShowEntry(item)" :key="item.path">
             <td class="name">
               <img v-if="item.kind === 'file'" src="../assets/file.svg" alt="file" />
               <img v-else src="../assets/module.svg" alt="module" />
@@ -184,6 +188,10 @@ td {
 
 tr.link {
   cursor: pointer;
+}
+
+tr.link:hover {
+  background-color: var(--border-primary);
 }
 
 th:last-child,
@@ -253,10 +261,6 @@ th {
 
 .rate-column, .rate-cell {
   width: auto;
-}
-
-.table-container > table > tbody > tr:hover {
-  background-color: var(--border-primary);
 }
 
 /*.sortable-header {
