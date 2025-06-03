@@ -18,7 +18,9 @@ const originThreshold = 10;
 let lineCount = 0;
 const selectedLineStart = ref(null);
 
-if (code) {
+if (!store.hasSources) {
+  lineCount = 0;
+} else if (code) {
   lineCount = code.length;
 } else {
   lineCount = Math.max(...(Object.values(file.value.records).map(x => x.lines.length)));
@@ -150,8 +152,9 @@ onMounted(async () => {
 <template>
   <div class="wrapper">
     <main>
-    <div v-if="lines.length == 0">NO COVERAGE / SOURCE DATA FOR THIS FILE IS AVAILABLE.</div>
-    <table v-if="lines.length != 0">
+    <div v-if="!store.hasSources">NO SOURCE DATA IS AVAILABLE.</div>
+    <div v-else-if="lines.length === 0">NO COVERAGE / SOURCE DATA FOR THIS FILE IS AVAILABLE.</div>
+    <table v-else>
       <thead><tr><th></th><th v-for="name in coverageTypes">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
       <tbody>
         <template v-for="line in lines" :key="line.n">

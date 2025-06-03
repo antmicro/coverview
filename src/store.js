@@ -23,7 +23,8 @@ export const store = reactive({
   loadedFromFile: false,
   hiddenCoverageTypes: Object.create(null),
   selectedDataset: "",
-  tests: new Set()
+  tests: new Set(),
+  hasSources: false,
 });
 
 const caches = reactive({
@@ -143,6 +144,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
   caches.files = allFiles;
   caches.summaries = allSummaries;
   store.metadata = config;
+  store.hasSources = !!sourcesFile;
   selectDataset();
   store.dataLoaded = true
 
