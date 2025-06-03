@@ -21,7 +21,7 @@ const selectedLineStart = ref(null);
 if (code) {
   lineCount = code.length;
 } else {
-  lineCount = Math.max(...(Object.values(file.value.records).map(x => x.lines.at(-1) ?? 0)));
+  lineCount = Math.max(...(Object.values(file.value.records).map(x => x.lines.length)));
 }
 
 function getColor(coverageData) {
