@@ -38,7 +38,7 @@ const caches = reactive({
   files: Object.create(null),
 });
 
-function parse_warning_threshold(value) {
+export function parse_warning_threshold(value) {
     if(value.endsWith("%")){
        value = parseFloat(value.slice(0, -1));
        if (value !== NaN) {

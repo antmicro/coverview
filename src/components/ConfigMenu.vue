@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import router from '../router/index.js';
 import { useRoute } from 'vue-router';
-import { store } from "../store";
+import { store, parse_warning_threshold } from "../store";
 
 const route = useRoute();
 
@@ -50,11 +50,11 @@ const warningThreshold = computed({
     return route.query.warningThreshold;
   },
   set(newValue) {
-    store.metadata.warning_threshold = newValue;
-    router.replace({ query: { ...route.query, warningThreshold: newValue }});
+    const t = parse_warning_threshold(newValue)
+    store.metadata.warning_threshold = t;
+    router.replace({ query: { ...route.query, warningThreshold: t }});
   }
 })
-
 </script>
 
 <template>
@@ -87,7 +87,7 @@ const warningThreshold = computed({
     </div>
     <hr class="config-menu-separator"/>
     <div class="switch-container">
-      <input id="warning-threshold-inupt" type="number" placeholder="50" v-model="warningThreshold"/>
+      <input id="warning-threshold-inupt" type="text" placeholder="50%" v-model="warningThreshold" />
       <label for="warning-threshold-inupt" class="config-menu-label">% threshold for coverage warning colouring</label>
     </div>
   </div>
@@ -149,7 +149,7 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-input[type="number"] {
+input[type="text"] {
   display: inline-block;
   width: 56px;
   height: 20px;

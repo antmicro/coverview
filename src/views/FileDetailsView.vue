@@ -1,7 +1,7 @@
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { store, availableCoverageTypes } from '../store.js';
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 
 const props = defineProps({
   fileName: String,
@@ -14,6 +14,12 @@ const route = useRoute();
 const router = useRouter();
 const code = file.value.source?.split('\n');
 const originThreshold = 10;
+const chunkSize = 200;
+const visibleChunk = ref(1);
+const observer = new IntersectionObserver((entries) => {
+  const id = parseInt(entries.find(e => e.isIntersecting)?.target.id);
+  if (id && id !== visibleChunk.value) visibleChunk.value = id;
+});
 let lineCount = 0;
 
 if (!store.hasSources) {
@@ -23,6 +29,8 @@ if (!store.hasSources) {
 } else {
   lineCount = Math.max(...(Object.values(file.value.records).map(x => x.lines.length)));
 }
+
+let chunks = Array(Math.ceil(lineCount / chunkSize));
 
 /** Here **/
 function getColor(coverageData, threshold) {
@@ -156,6 +164,7 @@ onMounted(async () => {
       }
     }
   }
+  for (const el of chunks) observer.observe(el);
 });
 </script>
 
@@ -167,45 +176,49 @@ onMounted(async () => {
     <table v-else>
       <thead><tr><th></th><th v-for="name in coverageTypes">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
       <tbody>
-        <template v-for="line in lines" :key="line.n">
-        <tr>
-          <td>
-            <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
-            <RouterLink :to="{ hash: `#L${line.n}`, query: route.query }" @click="highlightLine">{{ line.n }}</RouterLink>
-          </td>
-          <td v-for="type in coverageTypes">
-            <span :class="`${line.color} padded`">
-              <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type] && line.hasGroups[type]">
-                  <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
-                  <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
-              </span>
-              <span v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
-                  <div class="remarks" @mouseleave="toggleLineOrigins(line, false)">
-                      <ul>
-                          <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>
-                          <li class="remark" v-else v-for="origin in line.hitOrigins">{{origin}}</li>
-                          <li class="remark" style="cursor: pointer;" @click="toggleLineOrigins(line, true)" v-if="!line.showOrigins.value && line.hitOrigins.length > originThreshold">Show more...</li>
-                      </ul>
+        <template v-for="i in Math.ceil(lines.length / chunkSize)">
+          <template v-for="(line, index) in lines.slice(chunkSize * (i - 1), chunkSize * i)" :key="line.n">
+          <tr :ref="el => { if (index % chunkSize === 0) chunks[i-1] = el }" :id="i" style="height: 20px;">
+            <template v-if="Math.abs(visibleChunk - i) <= 1">
+              <td>
+                <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
+                <RouterLink :to="{ hash: `#L${line.n}`, query: route.query }" @click="highlightLine">{{ line.n }}</RouterLink>
+              </td>
+              <td v-for="type in coverageTypes">
+                <span :class="`${line.color} padded`">
+                  <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type] && line.hasGroups[type]">
+                      <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
+                      <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
+                  </span>
+                  <span v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
+                      <div class="remarks" @mouseleave="toggleLineOrigins(line, false)">
+                          <ul>
+                              <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>
+                              <li class="remark" v-else v-for="origin in line.hitOrigins">{{origin}}</li>
+                              <li class="remark" style="cursor: pointer;" @click="toggleLineOrigins(line, true)" v-if="!line.showOrigins.value && line.hitOrigins.length > originThreshold">Show more...</li>
+                          </ul>
+                      </div>
+                  </span>
+                </span>
+                <div v-if="line.showDetails.value === type">
+                  <div v-for="g in file.records[type]?.lines[line.n].groups" style="padding-left: 20px; display: flex;">
+                    <div :title="[...datapoint.sources].join(' ')" v-for="datapoint in g.subGroups" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
                   </div>
-              </span>
-            </span>
-            <div v-if="line.showDetails.value === type">
-              <div v-for="g in file.records[type]?.lines[line.n].groups" style="padding-left: 20px; display: flex;">
-                <div :title="[...datapoint.sources].join(' ')" v-for="datapoint in g.subGroups" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
-              </div>
-            </div>
-          </td>
-          <td style="color: #52525B;"><span :class="`${line.color} padded`">:</span></td>
-          <td class="break">
-            <span :class="`${line.color} padded`">{{ code ? line.code : 'NO LINE SOURCE AVAILABLE' }}</span>
-            <div v-if="line.showDetails.value !== ''">
-              <div v-for="g in file.records[line.showDetails.value]?.lines[line.n].groups" style="display: flex;">
-                <div v-for="(datapoint, info) in g.subGroups" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
-              </div>
-            </div>
-          </td>
-        </tr>
-      </template>
+                </div>
+              </td>
+              <td style="color: #52525B;"><span :class="`${line.color} padded`">:</span></td>
+              <td class="break">
+                <span :class="`${line.color} padded`">{{ code ? line.code : 'NO LINE SOURCE AVAILABLE' }}</span>
+                <div v-if="line.showDetails.value !== ''">
+                  <div v-for="g in file.records[line.showDetails.value]?.lines[line.n].groups" style="display: flex;">
+                    <div v-for="(datapoint, info) in g.subGroups" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
+                  </div>
+                </div>
+              </td>
+            </template>
+          </tr>
+        </template>
+        </template>
       </tbody>
     </table>
     </main>
