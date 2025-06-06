@@ -66,7 +66,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     const split = sourcesFile.split('### FILE: ');
     if (split.length > 1) {
       for (let i = 1; i < split.length; i++) {
-        const nameContent = split[i].split('\n');
+        const nameContent = split[i].split(/\r?\n/);
         const name = unifySourcePath(nameContent.shift());
         const content = nameContent.join('\n')
         sources[name] = content;

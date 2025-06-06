@@ -149,7 +149,7 @@ export class Record {
 function *getRecords(filename, content, namePrefix = null) {
   let lines = [];
   let name = "";
-  for (let line of content.split('\n')) {
+  for (let line of content.split(/\r?\n/)) {
     line = line.trim();
     if(!line || line.startsWith('#')) {
       continue; // Skip empty lines and comments
