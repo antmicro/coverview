@@ -32,7 +32,6 @@ if (!store.hasSources) {
 
 let chunks = Array(Math.ceil(lineCount / chunkSize));
 
-/** Here **/
 function getColor(coverageData, threshold) {
   if (Object.keys(coverageData).length === 0) return "";
   const hitsAndTotal = Object.values(coverageData).reduce((acc, curr) => {return {hits: acc.hits + curr.hits, total: acc.total + curr.total}});
