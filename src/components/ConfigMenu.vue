@@ -92,7 +92,7 @@ watchEffect(() => {
     <hr class="config-menu-separator"/>
     <div class="switch-container">
       <input id="warning-threshold-input" type="text" placeholder="50%" v-model="warningThreshold" :class="{ bad }" />
-      <label for="warning-threshold-input" class="config-menu-label">% threshold for coverage warning colouring</label>
+      <label for="warning-threshold-input" class="config-menu-label">Threshold for coverage warning colouring</label>
     </div>
   </div>
 </template>
