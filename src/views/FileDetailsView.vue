@@ -41,7 +41,7 @@ function getColor(coverageData, threshold) {
   } else  if (hitsAndTotal.hits == 0) {
     return "dimmed-red";
   } else {
-    if (!('warning_threshold' in store.metadata)) {
+    if (store.metadata.warning_threshold === undefined) {
       return "dimmed-yellow";
     }
     if (threshold < 1) {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watchEffect, onMounted } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
 import router from '../router/index.js';
 import { useRoute } from 'vue-router';
 import { store, parse_warning_threshold } from "../store";
@@ -7,6 +7,7 @@ import { store, parse_warning_threshold } from "../store";
 const route = useRoute();
 const isOpen = ref(false)
 const bad = ref(false);
+const thresholdInputUntouched = ref(true);
 
 const flatFileList = computed({
   get() {
@@ -50,14 +51,21 @@ const warningThreshold = computed({
     return route.query.warningThreshold || "";
   },
   set(newValue) {
+    thresholdInputUntouched.value = false;
     router.replace({ query: { ...route.query, warningThreshold: newValue } });
   }
 })
 
 watchEffect(() => {
-  const t = parse_warning_threshold(warningThreshold.value)
-  bad.value = Number.isNaN(t);
-  if (!bad.value) store.metadata.warning_threshold = t;
+  if (thresholdInputUntouched.value) return;
+  if (warningThreshold.value === "") {
+    store.metadata.warning_threshold = undefined;
+    bad.value = false;
+  } else {
+    const t = parse_warning_threshold(warningThreshold.value)
+    bad.value = Number.isNaN(t);
+    if (!bad.value) store.metadata.warning_threshold = t;
+  }
 })
 </script>
 
