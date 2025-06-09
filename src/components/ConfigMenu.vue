@@ -1,12 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watchEffect, onMounted } from 'vue';
 import router from '../router/index.js';
 import { useRoute } from 'vue-router';
 import { store, parse_warning_threshold } from "../store";
 
 const route = useRoute();
-
 const isOpen = ref(false)
+const bad = ref(false);
 
 const flatFileList = computed({
   get() {
@@ -47,13 +47,17 @@ const testsAsTotal = computed({
 
 const warningThreshold = computed({
   get() {
-    return route.query.warningThreshold;
+    return route.query.warningThreshold || "";
   },
   set(newValue) {
-    const t = parse_warning_threshold(newValue)
-    store.metadata.warning_threshold = t;
-    router.replace({ query: { ...route.query, warningThreshold: t }});
+    router.replace({ query: { ...route.query, warningThreshold: newValue } });
   }
+})
+
+watchEffect(() => {
+  const t = parse_warning_threshold(warningThreshold.value)
+  bad.value = Number.isNaN(t);
+  if (!bad.value) store.metadata.warning_threshold = t;
 })
 </script>
 
@@ -87,8 +91,8 @@ const warningThreshold = computed({
     </div>
     <hr class="config-menu-separator"/>
     <div class="switch-container">
-      <input id="warning-threshold-inupt" type="text" placeholder="50%" v-model="warningThreshold" />
-      <label for="warning-threshold-inupt" class="config-menu-label">% threshold for coverage warning colouring</label>
+      <input id="warning-threshold-input" type="text" placeholder="50%" v-model="warningThreshold" :class="{ bad }" />
+      <label for="warning-threshold-input" class="config-menu-label">% threshold for coverage warning colouring</label>
     </div>
   </div>
 </template>
@@ -160,6 +164,10 @@ input[type="text"] {
   color: white;
   transition: background-color 0.3s;
   cursor: pointer;
+}
+
+.bad {
+  outline: 1px solid red;
 }
 
 .switch:before {
