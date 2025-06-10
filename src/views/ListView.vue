@@ -20,11 +20,15 @@ const tableData = computed(() => {
     Object.keys(store.files).filter(path => path.startsWith(modulePath.value)) :
     getPathChildren(modulePath.value);
 
-  const td = files.map(path => ({
-    name: path,
-    path: flatList ? path : `${parent}${path}`,
-    data: store.summaries[flatList ? path : `${parent}${path}`] ?? {},
-  }));
+  const td = files.map(path => {
+    const finalPath = flatList ? path : `${parent}${path}`;
+    return {
+      name: path,
+      path: finalPath,
+      data: store.summaries[finalPath] ?? {},
+      kind: pathType(finalPath),
+    }
+  });
 
   if (route.query.burndown == "true") {
     const countMisses = x => {
