@@ -162,6 +162,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     initialQuery.flatFileList ??= config.flat_file_list ?? false;
     initialQuery.hideNotCovered ??= config.hide_not_covered ?? false;
     initialQuery.testsAsTotal ??= config.tests_as_total ?? false;
+    store.testsAsTotal = initialQuery.testsAsTotal;
     initialQuery.warningThreshold ??= config.warning_threshold ?? undefined;
     router.push({ query: initialQuery });
   });
