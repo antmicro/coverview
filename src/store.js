@@ -316,9 +316,14 @@ function fillSummary(path, summary, files, coverageTypes) {
   if (pathType(path, files) === "file") {
     summary[path] = Object.fromEntries(coverageTypes.map(x => [x, { hits: 0, total: 0 }]));
     for (const [type, record] of Object.entries(files[path].records)) {
-      const [hits, total] = record.stats;
-      summary[path][type].hits += hits;
-      summary[path][type].total += total;
+      if (type === "line") {
+        summary[path][type].hits = record.lines.filter(line => line.value > 0).length;
+        summary[path][type].total = record.lines.filter(line => line  !== undefined).length;
+      } else {
+        const [hits, total] = record.stats;
+        summary[path][type].hits += hits;
+        summary[path][type].total += total;
+      }
     }
     return;
   }
