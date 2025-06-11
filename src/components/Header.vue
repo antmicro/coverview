@@ -78,7 +78,7 @@ async function onFileUpload(event) {
 
 function reset() {
   unloadData();
-  router.go();
+  router.push({path: "/", replace: true});
 }
 </script>
 
