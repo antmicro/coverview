@@ -97,10 +97,12 @@ watchEffect(() => {
       <label for="tests-as-total-checkbox" class="switch"/>
       <label for="tests-as-total-checkbox" class="config-menu-label">Use total number of tests as total</label>
     </div>
-    <hr class="config-menu-separator"/>
-    <div class="switch-container">
-      <input id="warning-threshold-input" type="text" placeholder="50%" v-model="warningThreshold" :class="{ bad }" />
-      <label for="warning-threshold-input" class="config-menu-label">Threshold for coverage warning colouring</label>
+    <div v-if="!thresholdInputUntouched || (store.metadata.warning_threshold !== undefined)" class="warning_threshold_config">
+      <hr class="config-menu-separator"/>
+      <div class="switch-container">
+        <input id="warning-threshold-input" type="text" placeholder="50%" v-model="warningThreshold" :class="{ bad }" />
+        <label for="warning-threshold-input" class="config-menu-label">Threshold for coverage warning colouring</label>
+      </div>
     </div>
   </div>
 </template>
