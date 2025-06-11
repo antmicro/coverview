@@ -103,17 +103,21 @@ const highlightLine = e => {
     for (let i = start; i <= end; i++) {
       const el = document.querySelector(`#L${i}`);
       if (el) {
-        const tr = el.closest('tr');
-        tr.classList.add('highlighted-line');
-        setDecreasingZIndex(i, tr); 
+        const tr = el.closest('tr.line-row');
+        if (tr) {
+          tr.classList.add('highlighted-line');
+          setDecreasingZIndex(i, tr);
+        }
       }
     }
   } else {
     clearHighlight();
     selectedLineStart.value = lineNumber;
-    const tr = e.target.closest('tr');
-    tr.classList.add('highlighted-line');
-    setDecreasingZIndex(lineNumber, tr); 
+    const tr = e.target.closest('tr.line-row');
+    if (tr) {
+      tr.classList.add('highlighted-line');
+      setDecreasingZIndex(lineNumber, tr); 
+    }
   }
 };
 
@@ -142,7 +146,7 @@ onMounted(async () => {
       document.querySelector(`#L${start}`)?.scrollIntoView({ behavior: 'smooth' });
       
       for (let i = start; i <= end; i++) {
-        const tr = document.querySelector(`#L${i}`)?.closest('tr');
+        const tr = document.querySelector(`#L${i}`)?.closest('tr.line-row');
         if (tr) {
           tr.classList.add('highlighted-line');
           setDecreasingZIndex(i, tr); 
@@ -155,10 +159,12 @@ onMounted(async () => {
         const lineEl = document.querySelector(`#L${lineNum}`);
         if (lineEl) {
           lineEl.scrollIntoView({ behavior: 'smooth' });
-          const tr = lineEl.closest('tr');
-          tr.classList.add('highlighted-line');
-          setDecreasingZIndex(lineNum, tr);
-          selectedLineStart.value = lineNum;
+          const tr = lineEl.closest('tr.line-row');
+          if (tr) {
+            tr.classList.add('highlighted-line');
+            setDecreasingZIndex(lineNum, tr);
+            selectedLineStart.value = lineNum;
+          }
         }
       }
     }
@@ -175,56 +181,67 @@ onMounted(async () => {
     <table v-else>
       <thead><tr><th></th><th v-for="name in coverageTypes">{{ name }} data</th><th></th><th>Source code</th></tr></thead>
       <tbody>
-        <template v-for="i in Math.ceil(lines.length / chunkSize)">
-          <template v-for="(line, index) in lines.slice(chunkSize * (i - 1), chunkSize * i)" :key="line.n">
-          <tr :ref="el => { if (index % chunkSize === 0) chunks[i-1] = el }" :id="i" style="height: 20px;">
-            <template v-if="Math.abs(visibleChunk - i) <= 1">
-              <td>
-                <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
-                <RouterLink :to="{ hash: `#L${line.n}`, query: route.query }" @click="highlightLine">{{ line.n }}</RouterLink>
-              </td>
-              <td v-for="type in coverageTypes">
-                <span :class="`${line.color} padded`">
-                  <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type] && line.hasGroups[type]">
-                      <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
-                      <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
-                  </span>
-                  <span v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
-                      <div class="remarks" @mouseleave="toggleLineOrigins(line, false)">
-                          <ul>
-                              <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>
-                              <li class="remark" v-else v-for="origin in line.hitOrigins">{{origin}}</li>
-                              <li class="remark" style="cursor: pointer;" @click="toggleLineOrigins(line, true)" v-if="!line.showOrigins.value && line.hitOrigins.length > originThreshold">Show more...</li>
-                          </ul>
-                      </div>
-                  </span>
-                </span>
-                <div v-if="line.showDetails.value === type">
-                  <div v-for="g in file.records[type]?.lines[line.n].groups" style="padding-left: 20px; display: flex;">
-                    <div :title="[...datapoint.sources].join(' ')" v-for="datapoint in g.subGroups" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ datapoint.value }}</div>
+    <template v-for="i in Math.ceil(lines.length / chunkSize)">
+      <tr :ref="el => chunks[i-1] = el" :id="i" style="height: 1px;"></tr>
+      <template v-for="(line) in lines.slice(chunkSize * (i - 1), chunkSize * i)" :key="line.n">
+      <template v-if="Math.abs(visibleChunk - i) <= 1">
+      <tr>
+          <td>
+            <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
+            <RouterLink :to="{ hash: `#L${line.n}`, query: route.query }" @click="highlightLine">{{ line.n }}</RouterLink>
+          </td>
+          <td v-for="type in coverageTypes">
+            <span :class="`${line.color} padded`">
+              <span style="padding-right: 5px; padding-bottom: 3px; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type] && line.hasGroups[type]">
+                  <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
+                  <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
+              </span>
+              <span v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
+                  <div class="remarks" @mouseleave="toggleLineOrigins(line, false)">
+                      <ul>
+                          <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>
+                          <li class="remark" v-else v-for="origin in line.hitOrigins">{{origin}}</li>
+                          <li class="remark" style="cursor: pointer;" @click="toggleLineOrigins(line, true)" v-if="!line.showOrigins.value && line.hitOrigins.length > originThreshold">Show more...</li>
+                      </ul>
                   </div>
-                </div>
-              </td>
-              <td style="color: #52525B;"><span :class="`${line.color} padded`">:</span></td>
-              <td class="break">
-                <span :class="`${line.color} padded`">{{ code ? line.code : 'NO LINE SOURCE AVAILABLE' }}</span>
-                <div v-if="line.showDetails.value !== ''">
-                  <div v-for="g in file.records[line.showDetails.value]?.lines[line.n].groups" style="display: flex;">
-                    <div v-for="(datapoint, info) in g.subGroups" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem;">{{ info }}</div>
+              </span>
+            </span>
+          </td>
+          <td style="color: #52525b"><span :class="`${line.color} padded`">:</span></td>
+          <td class="break">
+            <span :class="`${line.color} padded`">{{ code ? line.code : "NO LINE SOURCE AVAILABLE" }}</span>
+          </td>
+        </tr>
+        <template v-if="line.showDetails.value !== ''">
+          <tr v-for="(g, gIndex) in file.records[line.showDetails.value]?.lines[line.n].groups" :key="`${line.n}-${gIndex}`" class="details-row">
+            <td></td>
+              <template v-for="type in coverageTypes" :key="`${line.n}-${type}-${gIndex}`">
+                <td v-if="line.showDetails.value === type">
+                  <div style="padding-left: 20px; display: flex">
+                    <div v-for="datapoint in g.subGroups" :key="`${line.n}-${type}-${gIndex}-${datapoint.value}`" :title="[...datapoint.sources].join(' ')" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem">{{ datapoint.value }}</div>
                   </div>
-                </div>
-              </td>
-            </template>
+                </td>
+                <td v-else></td>
+              </template>
+            <td></td>
+            <td class="break">
+              <div class="details-grid">
+                <div v-for="(datapoint, info) in g.subGroups" :key="`${line.n}-info-${gIndex}-${info}`" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem">{{ info }}</div>
+              </div>
+            </td>
           </tr>
         </template>
         </template>
-      </tbody>
-    </table>
+        <template v-else><tr style="height: 20px;"></tr></template>
+        </template>
+        </template>
+        </tbody>
+      </table>
     </main>
     <div class="sticky-scrollbar"></div>
   </div>
-</template>
-
+</template>         
+        
 <style scoped>
 a.router-link-active {
   text-decoration: none;
@@ -234,6 +251,11 @@ a.router-link-active {
 .wrapper {
   position: relative;
   width: 100%;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 main {
@@ -260,6 +282,7 @@ th, td:not(:has(.padded)), .padded {
 
   td.break {
     word-break: break-all;
+    overflow-wrap: break-word;
   }
 }
 
@@ -276,9 +299,9 @@ th, td:not(:has(.padded)), .padded {
   }
 
   table {
-    table-layout: fixed;
+    table-layout: auto;
     white-space: nowrap;
-    width: max-content;
+    width: 100%;
   }
 
   .sticky-scrollbar {
@@ -301,7 +324,10 @@ th, td:not(:has(.padded)), .padded {
 table {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
+  table-layout: auto;
+  width: 100%;
 }
+
 th {
   text-align: left;
   color: #A1A1AA;
@@ -310,9 +336,6 @@ th {
 th, td:not(:has(.padded)), .padded {
   white-space: pre-wrap;
   padding: 0rem 0.3rem;
-}
-td.break {
-  word-break: break-all;
 }
 
 td {
@@ -330,7 +353,12 @@ td:first-of-type {
 
 .datapoint:first-of-type {
   padding-top: 0.5rem;
- }
+}
+ 
+.datapoint {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
 
 .icon {
   width: 13px;
@@ -340,15 +368,23 @@ td:first-of-type {
 span .remarks {
     display: none;
 }
+
 span:hover .remarks {
     display: block;
     position: absolute;
-    width: 100%;
     z-index: 9999 !important;
+    left: var(--tooltip-left, auto);
+    top: var(--tooltip-top, auto);
 }
 
 span:hover .remarks ul {
     width: max-content;
+    position: relative;
+     top: 0;
+     left: 0;
+     background-color: #000000;
+     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+     z-index: 100000;
 }
 span:hover .remarks ul .remark {
     width: 100%;
@@ -375,7 +411,11 @@ span:hover .remarks ul .remark:last-child {
     border-bottom-right-radius: 6px;
 }
 
-.highlighted-line {
+tr {
+  position: relative;
+}
+
+.line-row.highlighted-line {
   background-color: rgba(var(--accent-primary-rgb, 0, 120, 215), 0.15);
   filter: brightness(1.3);
   border: 1px solid rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4);
