@@ -89,6 +89,7 @@ There are four main sources of data:
     "commit": "commit_hash",
     "timestamp": "2025-03-24T20:15:43.717+0000",
     "tests_as_total": true
+    "warning_threshold": "21",
     "datasets": {
       "dataset_name1": {
         "line": [ "line-set1.info", "line-set1.desc" ],
@@ -117,6 +118,7 @@ There are four main sources of data:
   * `timestamp` - date and time of coverage in the ISO format
   * `additional` - a set of user-defined key-value pairs for additional information or run parameters
   * `tests_as_total` -  show executed tests out of total tests in line coverage
+  * `warning_threshold` - coverage threshold below which lines are highlighted in yellow. Can be defined as absolute value or percentage of all tests
   * `flat_file_list` - show sources as a flat list of files
   * `hide_not_covered` - hide files without coverage
 
