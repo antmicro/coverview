@@ -44,7 +44,7 @@ function getColor(coverageData, threshold) {
     if (store.metadata.warning_threshold === undefined) {
       return "dimmed-yellow";
     }
-    if (threshold < 1) {
+    if (threshold <= 1) {
         threshold = Math.floor(hitsAndTotal.total * threshold);
     }
     return hitsAndTotal.hits >= threshold ? "dimmed-green" : "dimmed-yellow";
