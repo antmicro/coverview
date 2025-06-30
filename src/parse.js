@@ -127,14 +127,21 @@ export class Record {
 
   /** @type {[hits: number, total: number]} */
   get stats() {
+    const hasGroups = this.lines.some(line => line.hasGroups);
+
     let hits = 0;
     let total = 0;
     for (const line of this.lines) {
       if (!line) continue;
 
-      const [lineHits, lineTotal] = line.stats;
-      hits += lineHits;
-      total += lineTotal;
+      if (store.testsAsTotal && !hasGroups) {
+        hits += line.value > 0 ? 1 : 0;
+        total += 1;
+      } else {
+        const [lineHits, lineTotal] = line.stats;
+        hits += lineHits;
+        total += lineTotal;
+      }
     }
     return [hits, total];
   }
