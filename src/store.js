@@ -159,9 +159,23 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     // When uploading new dataset, we want to reset query params and use metadata.
     // Otherwise, we prefer current query params to enable URLs to produce reproducible views.
     let initialQuery = fromUploadedFile ? {} : Object.assign({}, router.currentRoute.value.query);
-    initialQuery.flatFileList ??= config.flat_file_list ?? false;
-    initialQuery.hideNotCovered ??= config.hide_not_covered ?? false;
-    initialQuery.testsAsTotal ??= config.tests_as_total ?? false;
+
+    function get_bool(query_value) {
+      if (query_value !== undefined) {
+        if (query_value === 'false') {
+          return false;
+        } else if (query_value === 'true') {
+          return true;
+        }
+        console.log(`Query value can't be cast to bool: ${query_value}`)
+      }
+      // Invalid values shouldn't be used.
+      return undefined;
+    }
+
+    initialQuery.flatFileList = get_bool(initialQuery.flatFileList) ?? (config.flat_file_list ?? false);
+    initialQuery.hideNotCovered = get_bool(initialQuery.hideNotCovered) ?? (config.hide_not_covered ?? false);
+    initialQuery.testsAsTotal = get_bool(initialQuery.testsAsTotal) ?? (config.tests_as_total ?? false);
     store.testsAsTotal = initialQuery.testsAsTotal;
     initialQuery.warningThreshold ??= config.warning_threshold ?? undefined;
     router.push({ query: initialQuery });
