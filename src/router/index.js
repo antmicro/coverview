@@ -4,6 +4,7 @@ import TreeView from "../views/TreeView.vue";
 import TestView from "../views/TestView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
 import PathView from "../views/PathView.vue";
+import TableView from "../views/TableView.vue";
 import { pathType, store, selectDataset } from '../store.js';
 
 const router = createRouter({
@@ -46,6 +47,14 @@ const router = createRouter({
       path: '/404',
       name: 'NotFoundView',
       component: NotFoundView
+    },
+    {
+      path: "/table",
+      component: TableView,
+      beforeEnter: async (to, _) => {
+        await store.loaded;
+        selectDataset(to.query.dataset);
+      }
     }
   ],
 });

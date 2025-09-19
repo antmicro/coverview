@@ -148,6 +148,23 @@ export class Record {
 }
 
 /**
+ *
+ * @param {string} text
+ * @param {string} separator
+ * @returns {[first: string, second: string]}
+ */
+function splitFirst(text, separator) {
+  const separatorIndex = text.indexOf(separator);
+  if (separatorIndex < 0) {
+    throw Error(`Separator '${separator}' not present`);
+  }
+  return [
+    text.slice(0, separatorIndex),
+    text.slice(separatorIndex + 1),
+  ];
+}
+
+/**
  * @param {string} content
  * @param {string?} namePrefix
  * @returns {Generator<[name: string, lines: [prefix: string, data: string][]]>}
@@ -168,21 +185,18 @@ function *getRecords(filename, content, namePrefix = null) {
       continue;
     }
 
-    const separatorIndex = line.indexOf(":");
-    if (separatorIndex === -1) {
+    try {
+      const [prefix, content] = splitFirst(line, ':');
+      if (prefix === namePrefix) {
+        name = unifySourcePath(content);
+        continue;
+      }
+
+      lines.push([prefix, content]);
+    } catch (e) {
       console.error(`The ${filename} file seems malformed, encountered line without any colon other than "end_of_record": ${line}`);
       continue;
     }
-
-    const prefix = line.slice(0, separatorIndex);
-    const content = line.slice(separatorIndex + 1);
-
-    if (prefix === namePrefix) {
-      name = unifySourcePath(content);
-      continue;
-    }
-
-    lines.push([prefix, content]);
   }
 }
 
@@ -237,6 +251,32 @@ export function parseDesc(filename, content, records) {
     }
   }
   return allTests;
+}
+
+/**
+ * @param {string} filepath
+ * @param {string} content
+ * @param {{[file: string]: Record}} records
+ * @returns {{[file: string]: Record}}
+ */
+export function parseTable(filepath, content, records) {
+  for (const [source, lines] of getRecords(filepath, content, "SF")) {
+    console.log(`Table source is: ${source}`);
+    /** @type {Record} */
+    const record = source in records ? records[source] : new Record(source, records);
+    for (const [prefix, data] of lines) {
+      try {
+        if (prefix === "BRDA") {
+          const [_, __, name, hitCount] = data.split(",");
+          const [title, rest] = splitFirst(name, ".");
+          record.getLine(0).getGroup(title).getSubGroup(rest).add(hitCount);
+        }
+      } catch (e) {
+        console.error(`Incorrect line if file '${filepath}': ${prefix}:${data}`);
+        continue;
+      }
+    }
+  }
 }
 
 /**

@@ -1,7 +1,7 @@
 import { reactive, computed, toRaw, ref } from 'vue'
 import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
 import { XzReadableStream } from 'xz-decompress';
-import { Record, parseInfo, parseDesc, unifySourcePath } from './parse';
+import { Record, parseInfo, parseDesc, unifySourcePath, parseTable } from './parse';
 import router from './router/index.js'
 
 /**
@@ -11,6 +11,8 @@ import router from './router/index.js'
  * @typedef {{[dataset: string]: Files}} AllFiles
  * @typedef {{[path: string]: { [type: string]: { hits: number, total: number } }}} CoverageSummary
  * @typedef {{[dataset: string]: CoverageSummary}} AllSummaries
+ * @typedef {{[path: string]: Record}} Tables
+ * @typedef {{[dataset: string]: Tables}} AllTables
  */
 
 export const store = reactive({
@@ -30,12 +32,16 @@ export const store = reactive({
   selectedDataset: "",
   tests: new Set(),
   hasSources: false,
-  showSearchWindow: ref(false)
+  showSearchWindow: ref(false),
+  /** @type {Tables} */
+  tables: Object.create(null),
 });
 
 const caches = reactive({
   /** @type {AllFiles} */
   files: Object.create(null),
+  /** @type {AllTables} */
+  tables: Object.create(null),
 });
 
 export function parse_warning_threshold(value) {
@@ -98,16 +104,41 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     }
   }
 
+  /** @type {string[]} */
+  const tableCoverage = 'table_coverage' in config ? config.table_coverage : [];
+  console.log("Table coverage:", tableCoverage);
+
   /** @type {AllFiles} */
   const allFiles = Object.create(null);
+  /** @type {AllTables} */
+  const allTables = Object.create(null);
+
   for (const [dataset, layout] of Object.entries(config.datasets)) {
     for (let [coverageType, files] of Object.entries(layout)) {
-      /** @type {{[filename: string]: Record}} */
-      const records = Object.create(null);
-
       files = Array.isArray(files) ? files : [files];
       const infoFiles = files.filter(x => x.endsWith('.info'));
       const descFiles = files.filter(x => x.endsWith('.desc'));
+
+      // Parse this INFO file as a table
+      if (tableCoverage.includes(coverageType)) {
+        if (!(dataset in allTables)) {
+          allTables[dataset] = Object.create(null);
+        }
+
+        // TODO: Somehow handle desc files?
+        for (const infoFile of infoFiles) {
+          const label = `Loading .info file: ${infoFile}`;
+          console.time(label);
+          parseTable(infoFile, inputFiles[infoFile], allTables[dataset]);
+          console.timeEnd(label);
+
+          console.log(allTables);
+        }
+        continue;
+      }
+
+      /** @type {{[filename: string]: Record}} */
+      const records = Object.create(null);
 
       for (const infoFile of infoFiles) {
         if (!(infoFile in inputFiles)) {
@@ -184,6 +215,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
 
   // Set new data
   caches.files = allFiles;
+  caches.tables = allTables;
   store.metadata = config;
   store.hasSources = !!sourcesFile;
   selectDataset();
@@ -239,6 +271,7 @@ export function selectDataset(dataset = null) {
 
   store.selectedDataset = dataset;
   store.files = caches.files[dataset];
+  store.tables = caches.tables[dataset];
 }
 
 /**
