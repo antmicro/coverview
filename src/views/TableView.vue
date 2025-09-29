@@ -1,12 +1,19 @@
 <script setup>
 import { store } from '../store';
+
+const props = defineProps({
+  filePath: String,
+});
+
+// Show tables for all files if none are specified
+const tableData = props.filePath ? { [props.filePath]: store.tables[props.filePath] } : store.tables;
 </script>
 
 
 <template>
   <div class="wrapper">
     <main>
-      <template v-for="[path, fileGroups] in Object.entries(store.tables)">
+      <template v-for="[path, fileGroups] in Object.entries(tableData)">
         <table>
           <thead>
             <tr>

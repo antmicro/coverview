@@ -2,17 +2,18 @@
 import { useRoute, useRouter } from "vue-router";
 import { store, availableCoverageTypes } from '../store.js';
 import { computed, ref, onMounted } from 'vue';
+import TableView from "./TableView.vue";
 
 const props = defineProps({
   fileName: String,
 })
 
 /** @type {{value: File}} */
-const file = computed(() => store.files[props.fileName]);
+const file = store.files[props.fileName];
 const coverageTypes = computed(() => availableCoverageTypes());
 const route = useRoute();
 const router = useRouter();
-const code = file.value.source?.split('\n');
+const code = file.source?.split('\n');
 const originThreshold = 10;
 const chunkSize = 200;
 const visibleChunk = ref(1);
@@ -27,7 +28,7 @@ if (!store.hasSources) {
 } else if (code) {
   lineCount = code.length;
 } else {
-  lineCount = Math.max(...(Object.values(file.value.records).map(x => x.lines.length)));
+  lineCount = Math.max(...(Object.values(file.records).map(x => x.lines.length)));
 }
 
 let chunks = Array(Math.ceil(lineCount / chunkSize));
@@ -57,7 +58,7 @@ const lines = computed(() => Array.from(Array(lineCount).keys())
       let hasGroups = Object.create(null);
       let hitOrigins = []; // this is a bit hacky, as we only have "line" inside the loop
       // we use hitOrigins as the tests which hit the line since "source" is confusing
-      for (const [type, record] of Object.entries(file.value.records)) {
+      for (const [type, record] of Object.entries(file.records)) {
         if (!store.hiddenCoverageTypes[type]) {
           const line = record.lines[i + 1];
           if (line) {
@@ -171,10 +172,16 @@ onMounted(async () => {
   }
   for (const el of chunks) observer.observe(el);
 });
+
+const showTable = ref(false);
 </script>
 
 <template>
-  <div class="wrapper">
+  <label v-if="Object.hasOwn(store?.tables ?? {}, props.fileName)">
+    Show Table
+    <input type="checkbox" @change="e => showTable = e.target.checked">
+  </label>
+  <div class="wrapper" v-if="!showTable">
     <main>
     <div v-if="!store.hasSources">NO SOURCE DATA IS AVAILABLE.</div>
     <div v-else-if="lines.length === 0">NO COVERAGE / SOURCE DATA FOR THIS FILE IS AVAILABLE.</div>
@@ -240,6 +247,7 @@ onMounted(async () => {
     </main>
     <div class="sticky-scrollbar"></div>
   </div>
+  <TableView :file-path="props.fileName" v-if="showTable" />
 </template>         
         
 <style scoped>

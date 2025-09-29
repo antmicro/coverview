@@ -104,9 +104,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     }
   }
 
-  /** @type {string[]} */
-  const tableCoverage = 'table_coverage' in config ? config.table_coverage : [];
-  console.log("Table coverage:", tableCoverage);
+  const tableCoverageType = config['table_coverage'];
 
   /** @type {AllFiles} */
   const allFiles = Object.create(null);
@@ -120,21 +118,18 @@ export function loadData(inputFiles, fromUploadedFile = false) {
       const descFiles = files.filter(x => x.endsWith('.desc'));
 
       // Parse this INFO file as a table
-      if (tableCoverage.includes(coverageType)) {
+      if (typeof tableCoverageType === 'string' && coverageType === tableCoverageType) {
         if (!(dataset in allTables)) {
           allTables[dataset] = Object.create(null);
         }
 
-        // TODO: Somehow handle desc files?
         for (const infoFile of infoFiles) {
-          const label = `Loading .info file: ${infoFile}`;
+          const label = `Loading .info file: ${infoFile} (table)`;
           console.time(label);
           parseTable(infoFile, inputFiles[infoFile], allTables[dataset]);
           console.timeEnd(label);
-
-          console.log(allTables);
         }
-        continue;
+        // Fallthrough
       }
 
       /** @type {{[filename: string]: Record}} */
