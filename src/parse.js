@@ -261,9 +261,8 @@ export function parseDesc(filename, content, records) {
  */
 export function parseTable(filepath, content, records) {
   for (const [source, lines] of getRecords(filepath, content, "SF")) {
-    console.log(`Table source is: ${source}`);
-    /** @type {Record} */
-    const record = source in records ? records[source] : new Record(source, records);
+    const hadRecord = Object.hasOwn(records, source);
+    const record = hadRecord ? records[source] : new Record(source, null);
     for (const [prefix, data] of lines) {
       try {
         if (prefix === "BRDA") {
@@ -275,6 +274,11 @@ export function parseTable(filepath, content, records) {
         console.error(`Incorrect line if file '${filepath}': ${prefix}:${data}`);
         continue;
       }
+    }
+
+    if (!hadRecord && (record.lines[0]?.hasGroups ?? false)) {
+      // Only add the record if it actually contains any data
+      records[source] = record;
     }
   }
 }
