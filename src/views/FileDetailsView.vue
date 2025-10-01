@@ -89,18 +89,18 @@ const setDecreasingZIndex = (lineNumber, element) => {
 
 const clearHighlight = () => document.querySelectorAll('.highlighted-line').forEach(el => el.classList.remove('highlighted-line'));
 
-const highlightLine = e => { 
+const highlightLine = e => {
   if (e.shiftKey) e.preventDefault();
-  
+
   const lineNumber = parseInt(e.target.innerText);
-  
+
   if (e.shiftKey && selectedLineStart.value !== null) {
     clearHighlight();
     const start = Math.min(selectedLineStart.value, lineNumber);
     const end = Math.max(selectedLineStart.value, lineNumber);
-    
+
     router.replace({ hash: `#L${start}-L${end}`, query: route.query });
-    
+
     for (let i = start; i <= end; i++) {
       const el = document.querySelector(`#L${i}`);
       if (el) {
@@ -117,7 +117,7 @@ const highlightLine = e => {
     const tr = e.target.closest('tr.line-row');
     if (tr) {
       tr.classList.add('highlighted-line');
-      setDecreasingZIndex(lineNumber, tr); 
+      setDecreasingZIndex(lineNumber, tr);
     }
   }
 };
@@ -138,19 +138,19 @@ onMounted(async () => {
 
   if (route.hash) {
     clearHighlight();
-    
+
     const rangeMatch = route.hash.match(/#L(\d+)-L(\d+)/);
     if (rangeMatch) {
       const [_, start, end] = rangeMatch.map(Number);
       selectedLineStart.value = start;
-      
+
       document.querySelector(`#L${start}`)?.scrollIntoView({ behavior: 'smooth' });
-      
+
       for (let i = start; i <= end; i++) {
         const tr = document.querySelector(`#L${i}`)?.closest('tr.line-row');
         if (tr) {
           tr.classList.add('highlighted-line');
-          setDecreasingZIndex(i, tr); 
+          setDecreasingZIndex(i, tr);
         }
       }
     } else {
@@ -248,8 +248,7 @@ const showTable = ref(false);
     <div class="sticky-scrollbar"></div>
   </div>
   <TableView :file-path="props.fileName" v-if="showTable" />
-</template>         
-        
+</template>
 <style scoped>
 a.router-link-active {
   text-decoration: none;
@@ -362,7 +361,7 @@ td:first-of-type {
 .datapoint:first-of-type {
   padding-top: 0.5rem;
 }
- 
+
 .datapoint {
   white-space: normal;
   overflow-wrap: break-word;
