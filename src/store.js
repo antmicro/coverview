@@ -352,6 +352,18 @@ export function pathType(path, files = null) {
 
 /**
  * @param {string} path
+ * @param {Tables?} tables
+ * @returns {boolean}
+ */
+export function hasTableForFile(path, tables = null) {
+  if (!tables) {
+    tables = store?.tables;
+  }
+  return Object.hasOwn(tables ?? {}, path)
+}
+
+/**
+ * @param {string} path
  * @param {CoverageSummary} summary
  * @param {Files} files
  * @param {string[]} coverageTypes

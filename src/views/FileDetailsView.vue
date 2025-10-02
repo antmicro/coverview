@@ -179,11 +179,7 @@ const showTable = ref(false);
 </script>
 
 <template>
-  <label v-if="Object.hasOwn(store?.tables ?? {}, props.fileName)">
-    Show Table
-    <input type="checkbox" @change="e => showTable = e.target.checked">
-  </label>
-  <div class="wrapper" v-if="!showTable">
+  <div class="wrapper">
     <main>
     <div v-if="!store.hasSources">NO SOURCE DATA IS AVAILABLE.</div>
     <div v-else-if="lines.length === 0">NO COVERAGE / SOURCE DATA FOR THIS FILE IS AVAILABLE.</div>
@@ -249,7 +245,6 @@ const showTable = ref(false);
     </main>
     <div class="sticky-scrollbar"></div>
   </div>
-  <TableView :file-path="props.fileName" v-if="showTable" />
 </template>
 <style scoped>
 a.router-link-active {
