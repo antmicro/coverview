@@ -23,6 +23,8 @@ const observer = new IntersectionObserver((entries) => {
 });
 let lineCount = 0;
 
+const selectedLineStart = ref(0);
+
 if (!store.hasSources) {
   lineCount = 0;
 } else if (code) {
@@ -192,7 +194,7 @@ const showTable = ref(false);
       <tr :ref="el => chunks[i-1] = el" :id="i" style="height: 1px;"></tr>
       <template v-for="(line) in lines.slice(chunkSize * (i - 1), chunkSize * i)" :key="line.n">
       <template v-if="Math.abs(visibleChunk - i) <= 1">
-      <tr>
+      <tr class="line-row">
           <td>
             <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
             <RouterLink :to="{ hash: `#L${line.n}`, query: route.query }" @click="highlightLine">{{ line.n }}</RouterLink>
