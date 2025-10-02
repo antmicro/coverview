@@ -9,11 +9,11 @@ const props = defineProps({
 })
 
 /** @type {{value: File}} */
-const file = store.files[props.fileName];
+const file = computed(() => store.files[props.fileName]);
 const coverageTypes = computed(() => availableCoverageTypes());
 const route = useRoute();
 const router = useRouter();
-const code = file.source?.split('\n');
+const code = file.value.source?.split('\n');
 const originThreshold = 10;
 const chunkSize = 200;
 const visibleChunk = ref(1);
@@ -28,7 +28,7 @@ if (!store.hasSources) {
 } else if (code) {
   lineCount = code.length;
 } else {
-  lineCount = Math.max(...(Object.values(file.records).map(x => x.lines.length)));
+  lineCount = Math.max(...(Object.values(file.value.records).map(x => x.lines.length)));
 }
 
 let chunks = Array(Math.ceil(lineCount / chunkSize));
@@ -58,7 +58,7 @@ const lines = computed(() => Array.from(Array(lineCount).keys())
       let hasGroups = Object.create(null);
       let hitOrigins = []; // this is a bit hacky, as we only have "line" inside the loop
       // we use hitOrigins as the tests which hit the line since "source" is confusing
-      for (const [type, record] of Object.entries(file.records)) {
+      for (const [type, record] of Object.entries(file.value.records)) {
         if (!store.hiddenCoverageTypes[type]) {
           const line = record.lines[i + 1];
           if (line) {
