@@ -80,6 +80,17 @@ function reset() {
   unloadData();
   router.push({path: "/", replace: true});
 }
+
+const returnFromAllTables = () => {
+  const previous = window.history.state?.back;
+  if (!previous || previous.startsWith('/tables')) {
+    // Go back to the Overview page, if we would end up on `/tables` again
+    // or exit Coverview entirely
+    router.push({ path: '/', query: route.query });
+  } else {
+    router.go(-1);
+  }
+}
 </script>
 
 <template>
@@ -100,6 +111,11 @@ function reset() {
           <button class="header-button" v-if="store.loadedFromFile" @click="reset"><img src="../assets/block.svg"></button>
         </div>
         <div class="nav-right">
+          <span class="info-item" v-if="Object.entries(store?.tables ?? {}).length > 0">
+            <img src="../assets/table.svg" alt="All tables" />
+            <RouterLink class="info-text" :to="{ path: '/tables', query: route.query }" v-if="route.path !== '/tables'">Show all tables</RouterLink>
+            <a @click="returnFromAllTables" style="cursor: pointer;" v-else>Hide all tables</a>
+          </span>
           <span class="info-item date" v-if="date">
             <img src="../assets/date.svg" alt="Date icon" />
             <span class="info-text">{{ date ? ((new Date(date)).toLocaleDateString('sv') + ' ' + (new Date(date)).toLocaleTimeString('sv')) : '?' }}</span>

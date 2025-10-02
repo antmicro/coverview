@@ -49,7 +49,7 @@ const router = createRouter({
       component: NotFoundView
     },
     {
-      path: "/table",
+      path: "/tables",
       component: TableView,
       beforeEnter: async (to, _) => {
         await store.loaded;
