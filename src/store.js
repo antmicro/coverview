@@ -223,7 +223,9 @@ export function loadData(inputFiles, fromUploadedFile = false) {
 export function unloadData() {
   store.selectedDataset = "";
   store.files = Object.create(null);
+  store.tables = Object.create(null);
   caches.files = Object.create(null);
+  caches.tables = Object.create(null);
   store.metadata = Object.create(null);
   store.loadedFromFile = false;
   store.hiddenCoverageTypes = Object.create(null);
