@@ -20,16 +20,17 @@ const highlightLine = (e) => {
   const eventTarget = e.currentTarget;
   eventTarget.classList.add('highlighted-line');
   const clickTarget = eventTarget.querySelector('.click-target')
-  router.replace({ hash: `#${clickTarget.id}`, query: route.query });
+  router.replace({ query: { ...route.query, T: clickTarget.id } });
 }
 
 onMounted(async () => {
-  if (route.hash) {
+  const tableParam = route.query.T;
+  if (tableParam) {
     clearHighlight();
 
-    // Remove the leading `#`
-    const el = document.getElementById(route.hash.substring(1))
+    const el = document.getElementById(tableParam)
     if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
       const parent = el.closest('.highlight-target');
       parent.classList.add('highlighted-line');
     }

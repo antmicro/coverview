@@ -101,7 +101,7 @@ const highlightLine = e => {
     const start = Math.min(selectedLineStart.value, lineNumber);
     const end = Math.max(selectedLineStart.value, lineNumber);
 
-    router.replace({ hash: `#L${start}-L${end}`, query: route.query });
+    router.replace({ query: { ...route.query, L: `${start}-${end}` } });
 
     for (let i = start; i <= end; i++) {
       const el = document.querySelector(`#L${i}`);
@@ -138,10 +138,11 @@ onMounted(async () => {
     new ResizeObserver(updateWidth).observe(main);
   }
 
-  if (route.hash) {
+  const lineParam = route.query.L;
+  if (lineParam) {
     clearHighlight();
 
-    const rangeMatch = route.hash.match(/#L(\d+)-L(\d+)/);
+    const rangeMatch = lineParam.match(/(\d+)-(\d+)/);
     if (rangeMatch) {
       const [_, start, end] = rangeMatch.map(Number);
       selectedLineStart.value = start;
@@ -156,18 +157,15 @@ onMounted(async () => {
         }
       }
     } else {
-      const lineMatch = route.hash.match(/#L(\d+)/);
-      if (lineMatch) {
-        const lineNum = Number(lineMatch[1]);
-        const lineEl = document.querySelector(`#L${lineNum}`);
-        if (lineEl) {
-          lineEl.scrollIntoView({ behavior: 'smooth' });
-          const tr = lineEl.closest('tr.line-row');
-          if (tr) {
-            tr.classList.add('highlighted-line');
-            setDecreasingZIndex(lineNum, tr);
-            selectedLineStart.value = lineNum;
-          }
+      const lineNum = Number(lineParam);
+      const lineEl = document.querySelector(`#L${lineNum}`);
+      if (lineEl) {
+        lineEl.scrollIntoView({ behavior: 'smooth' });
+        const tr = lineEl.closest('tr.line-row');
+        if (tr) {
+          tr.classList.add('highlighted-line');
+          setDecreasingZIndex(lineNum, tr);
+          selectedLineStart.value = lineNum;
         }
       }
     }
@@ -193,7 +191,7 @@ const showTable = ref(false);
       <tr class="line-row">
           <td>
             <span style="margin-top: -300px; position: absolute;" :id="`L${line.n}`"></span>
-            <RouterLink :to="{ hash: `#L${line.n}`, query: route.query }" @click="highlightLine">{{ line.n }}</RouterLink>
+            <RouterLink :to="{ query: { ...route.query, L: line.n } }" @click="highlightLine">{{ line.n }}</RouterLink>
           </td>
           <td v-for="type in coverageTypes">
             <span :class="`${line.color} padded`">

@@ -204,7 +204,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     initialQuery.testsAsTotal = get_bool(initialQuery.testsAsTotal) ?? (config.tests_as_total ?? false);
     store.testsAsTotal = initialQuery.testsAsTotal;
     initialQuery.warningThreshold ??= config.warning_threshold ?? undefined;
-    router.push({ hash: router.currentRoute.value.hash, query: initialQuery });
+    router.push({ query: initialQuery });
   });
   console.log("router init config is now set");
 

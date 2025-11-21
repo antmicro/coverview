@@ -59,4 +59,12 @@ const router = createRouter({
   ],
 });
 
+// Clear L/T query params when navigating between different paths (but not on initial load)
+router.beforeEach((to, from) => {
+  if (from.matched.length > 0 && to.path !== from.path && (to.query.L || to.query.T)) {
+    const { L, T, ...rest } = to.query;
+    return { path: to.path, query: rest };
+  }
+});
+
 export default router;
