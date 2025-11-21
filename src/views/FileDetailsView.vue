@@ -140,35 +140,44 @@ onMounted(async () => {
 
   const lineParam = route.query.L;
   if (lineParam) {
-    clearHighlight();
-
     const rangeMatch = lineParam.match(/(\d+)-(\d+)/);
-    if (rangeMatch) {
-      const [_, start, end] = rangeMatch.map(Number);
-      selectedLineStart.value = start;
-
-      document.querySelector(`#L${start}`)?.scrollIntoView({ behavior: 'smooth' });
-
-      for (let i = start; i <= end; i++) {
-        const tr = document.querySelector(`#L${i}`)?.closest('tr.line-row');
-        if (tr) {
-          tr.classList.add('highlighted-line');
-          setDecreasingZIndex(i, tr);
-        }
-      }
-    } else {
-      const lineNum = Number(lineParam);
-      const lineEl = document.querySelector(`#L${lineNum}`);
+    const start = rangeMatch ? Number(rangeMatch[1]) : Number(lineParam);
+    const end = rangeMatch ? Number(rangeMatch[2]) : null;
+    
+    selectedLineStart.value = start;
+    
+    // Scroll chunk marker into view to trigger virtual scrolling
+    const targetChunk = Math.ceil(start / chunkSize);
+    const chunkMarker = document.getElementById(String(targetChunk));
+    
+    if (chunkMarker) {
+      chunkMarker.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+    
+    // Wait for virtual scrolling to render, then highlight
+    setTimeout(() => {
+      clearHighlight();
+      
+      const lineEl = document.querySelector(`#L${start}`);
       if (lineEl) {
-        lineEl.scrollIntoView({ behavior: 'smooth' });
+        lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         const tr = lineEl.closest('tr.line-row');
         if (tr) {
           tr.classList.add('highlighted-line');
-          setDecreasingZIndex(lineNum, tr);
-          selectedLineStart.value = lineNum;
+          setDecreasingZIndex(start, tr);
+        }
+        
+        if (end) {
+          for (let i = start + 1; i <= end; i++) {
+            const tr = document.querySelector(`#L${i}`)?.closest('tr.line-row');
+            if (tr) {
+              tr.classList.add('highlighted-line');
+              setDecreasingZIndex(i, tr);
+            }
+          }
         }
       }
-    }
+    }, 200);
   }
   for (const el of chunks) observer.observe(el);
 });
