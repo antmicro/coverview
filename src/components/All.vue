@@ -55,7 +55,7 @@ const default_links = {
   <div class="app-container">
     <div class="content">
       <!-- those props should be read from some input file -->
-      <Header :date="store.metadata.timestamp" :logo="store.metadata.logo || ''" :title="store.metadata.title || 'Dashboard'" :commit="store.metadata.commit" :branch="store.metadata.branch" :repo="store.metadata.repo"/>
+      <Header :date="store.metadata.timestamp" :logo="store.metadata.logo || ''" :title="store.metadata.title || 'Dashboard'" :commit="store.metadata.commit" :branch="store.metadata.branch" :repo="store.metadata.repo" :testplan_link="store.metadata.testplan_link || ''"/>
       <div class="page-wrapper" v-if="hasData">
         <RouterView :key="$route.path" v-slot="{ Component }">
           <Info :timestamp="store?.metadata?.timestamp" :path="$route.params.path"></Info>

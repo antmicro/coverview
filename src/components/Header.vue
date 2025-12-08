@@ -12,7 +12,8 @@ const props = defineProps({
   repo: String,
   commit: String,
   logo: String,
-  title: String
+  title: String,
+  testplan_link: String
 })
 
 const route = useRoute();
@@ -49,6 +50,10 @@ async function downloadEmbeddedZipArchive() {
   link.download = 'coverview-data.zip';
   link.click();
   URL.revokeObjectURL(url);
+}
+
+async function openTestplan() {
+  window.open(props.testplan_link, '_blank');
 }
 
 async function onFileUpload(event) {
@@ -136,6 +141,9 @@ const returnFromAllTables = () => {
           <span class="info-item metadata" v-if="store?.metadata?._additional">
             <img src="../assets/fingerprint.svg" alt="Metadata icon" :title="store.metadata._additional" />
           </span>
+          <button class="header-button" v-if="testplan_link" @click="openTestplan">
+            <img src="../assets/testplan.svg" alt="Go to testplan">
+          </button>
           <button class="header-button" v-if="dataLoaded" @click="store.showSearchWindow = true">
             <img src="../assets/search.svg">
           </button>
