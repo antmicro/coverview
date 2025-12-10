@@ -119,6 +119,7 @@ There are four main sources of data:
   * `additional` - a set of user-defined key-value pairs for additional information or run parameters
   * `tests_as_total` -  show executed tests out of total tests in line coverage
   * `warning_threshold` - coverage threshold below which lines are highlighted in yellow. Can be defined as absolute value or percentage of all tests
+  * `testplan_link` - link to the testplan for the project, e.g. generated with [Testplanner](https://github.com/antmicro/testplanner)
   * `flat_file_list` - show sources as a flat list of files
   * `hide_not_covered` - hide files without coverage
 
