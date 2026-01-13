@@ -47,6 +47,12 @@ const breadcrumbParts = computed(() => {
   return result;
 });
 
+// Filter out line/table highlight params when navigating
+const queryWithoutHighlight = computed(() => {
+  const { L, T, ...rest } = route.query;
+  return rest;
+});
+
 const showFilePicker = Object.keys(originalFiles).length === 0;
 
 const dataLoaded = computed(() => store.dataLoaded)
@@ -113,7 +119,7 @@ const returnFromAllTables = () => {
         <div class="nav-right">
           <span class="info-item" v-if="Object.entries(store?.tables ?? {}).length > 0">
             <img src="../assets/table.svg" alt="All tables" />
-            <RouterLink class="info-text" :to="{ path: '/tables', query: route.query }" v-if="route.path !== '/tables'">Show all tables</RouterLink>
+            <RouterLink class="info-text" :to="{ path: '/tables', query: queryWithoutHighlight }" v-if="route.path !== '/tables'">Show all tables</RouterLink>
             <a @click="returnFromAllTables" style="cursor: pointer;" v-else>Hide all tables</a>
           </span>
           <span class="info-item date" v-if="date">
@@ -144,11 +150,11 @@ const returnFromAllTables = () => {
       </div>
       <ul class="breadcrumbs">
         <li>
-          <RouterLink :to="{ path: '/', query: route.query }">{{ store.metadata.repo?.split("/").pop() || 'Overview' }}</RouterLink>
+          <RouterLink :to="{ path: '/', query: queryWithoutHighlight }">{{ store.metadata.repo?.split("/").pop() || 'Overview' }}</RouterLink>
         </li>
         <li v-for="part in breadcrumbParts">
           <img src="../assets/caret.svg" alt="caret" />
-          <RouterLink :to="{ path: part.target, query: route.query }">{{ part.name }}</RouterLink>
+          <RouterLink :to="{ path: part.target, query: queryWithoutHighlight }">{{ part.name }}</RouterLink>
         </li>
       </ul>
     </nav>
