@@ -65,7 +65,7 @@ const lines = computed(() => Array.from(Array(lineCount).keys())
           const line = record.lines[i + 1];
           if (line) {
             hasGroups[type] = line.hasGroups;
-            const [hits, total] = line.stats;
+            const [hits, total] = line.stats(store);
             coverageData[type] = { hits, total };
             hitOrigins = Array.from(line.sources);
           }

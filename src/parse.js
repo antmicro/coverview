@@ -1,6 +1,3 @@
-import { computed } from 'vue'
-import { store } from './store'
-
 class SubGroup {
   constructor() {
     this.value = 0;
@@ -35,7 +32,7 @@ class Group {
   }
 
   /** @type {[hits: number, total: number]} */
-  get stats() {
+  stats() {
     let total = 0;
     let hits = 0;
     for (const x of Object.values(this.subGroups)) {
@@ -53,24 +50,6 @@ class Line {
     this.groups = null;
     /** @type {Set<string>} */
     this.sources = new Set();
-    this.stats = computed(() => {
-      let hits = 0;
-      let totals = 0;
-      if (this.hasGroups) {
-        for (const group of Object.values(this.groups)) {
-          const [groupHits, groupTotals] = group.stats;
-          hits += groupHits;
-          totals += groupTotals;
-        }
-      } else if (store.testsAsTotal && store.tests.size !== 0 && this.sources) {
-        hits = this.sources.size;
-        totals = store.tests.size;
-      } else {
-        hits = this.value > 0 ? 1 : 0;
-        totals = 1;
-      }
-      return [hits, totals];
-    })
   }
 
   /**
@@ -99,6 +78,26 @@ class Line {
   get hasGroups() {
     return !!this.groups;
   }
+
+  /** @type {[hits: number, total: number]} */
+  stats(store = null) {
+    let hits = 0;
+    let totals = 0;
+    if (this.hasGroups) {
+      for (const group of Object.values(this.groups)) {
+        const [groupHits, groupTotals] = group.stats();
+        hits += groupHits;
+        totals += groupTotals;
+      }
+    } else if (store && store.testsAsTotal && store.tests.size !== 0 && this.sources) {
+      hits = this.sources.size;
+      totals = store.tests.size;
+    } else {
+      hits = this.value > 0 ? 1 : 0;
+      totals = 1;
+    }
+    return [hits, totals];
+  }
 }
 
 export class Record {
@@ -126,22 +125,15 @@ export class Record {
   }
 
   /** @type {[hits: number, total: number]} */
-  get stats() {
-    const hasGroups = this.lines.some(line => line.hasGroups);
-
+  stats() {
     let hits = 0;
     let total = 0;
     for (const line of this.lines) {
       if (!line) continue;
 
-      if (store.testsAsTotal && !hasGroups) {
-        hits += line.value > 0 ? 1 : 0;
-        total += 1;
-      } else {
-        const [lineHits, lineTotal] = line.stats;
-        hits += lineHits;
-        total += lineTotal;
-      }
+      const [lineHits, lineTotal] = line.stats();
+      hits += lineHits;
+      total += lineTotal;
     }
     return [hits, total];
   }

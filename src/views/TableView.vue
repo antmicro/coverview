@@ -52,7 +52,7 @@ onMounted(async () => {
           </thead>
           <tbody>
             <template v-for="[name, groups] in Object.entries(fileGroups.lines[0].groups)" :key="name">
-              <tr :set="[hits, total] = groups.stats" class="highlight-target" @click="highlightLine">
+              <tr :set="[hits, total] = groups.stats()" class="highlight-target" @click="highlightLine">
                 <th>
                   {{ name }}
                   <span class="click-target" style="margin-top: -300px; position: absolute;" :id="name.replaceAll(' ', '_')"></span>

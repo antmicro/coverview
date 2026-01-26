@@ -19,11 +19,7 @@ export const store = reactive({
   /** @type {Files} */
   files: Object.create(null),
   /** @type {CoverageSummary} */
-  summaries: computed(() => {
-    let summary = Object.create(null);
-    fillSummary("", summary, store.files, Object.keys(store.metadata.datasets[store.selectedDataset]));
-    return summary;
-  }),
+  summaries: Object.create(null),
   metadata: Object.create(null),
   dataLoaded: false,
   loadedFromFile: false,
@@ -42,6 +38,8 @@ const caches = reactive({
   files: Object.create(null),
   /** @type {AllTables} */
   tables: Object.create(null),
+  /** @type {AllSummaries} */
+  summaries: Object.create(null),
 });
 
 export function parse_warning_threshold(value) {
@@ -180,6 +178,17 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     alert(`No dataset found. Is this a valid Coverview archive?`);
     return;
   }
+
+  /** @type {AllSummaries} */
+  const allSummaries = Object.create(null);
+  for(const [dataset, files] of Object.entries(allFiles)) {
+    const label = `Calculating summaries for dataset: ${dataset}`
+    console.time(label);
+    allSummaries[dataset] = Object.create(null);
+    fillSummary("", allSummaries[dataset], files, Object.keys(config.datasets[dataset]));
+    console.timeEnd(label);
+  }
+
   // Set initial query
   router.isReady().then(() => {
     // When uploading new dataset, we want to reset query params and use metadata.
@@ -211,11 +220,11 @@ export function loadData(inputFiles, fromUploadedFile = false) {
   // Set new data
   caches.files = allFiles;
   caches.tables = allTables;
+  caches.summaries = allSummaries;
   store.metadata = config;
   store.hasSources = !!sourcesFile;
   selectDataset();
   store.dataLoaded = true;
-
 
   console.timeEnd("File loading");
 }
@@ -224,8 +233,10 @@ export function unloadData() {
   store.selectedDataset = "";
   store.files = Object.create(null);
   store.tables = Object.create(null);
+  store.summaries = Object.create(null);
   caches.files = Object.create(null);
   caches.tables = Object.create(null);
+  caches.summaries = Object.create(null);
   store.metadata = Object.create(null);
   store.loadedFromFile = false;
   store.hiddenCoverageTypes = Object.create(null);
@@ -247,6 +258,10 @@ export function loadAdditionalFile(type, name, content) {
   if (name.endsWith(".info")) {
     parseInfo(name, content, records);
 
+    // Recalculate summaries for the current dataset as values may have changed
+    const newSummary = Object.create(null);
+    fillSummary("", newSummary, store.files, availableCoverageTypes());
+    store.summaries = (caches.summaries[store.selectedDataset] = newSummary);
   } else if (name.endsWith(".desc")) {
     store.tests = toRaw(store.tests).union(parseDesc(name, content, records));
   } else {
@@ -271,6 +286,7 @@ export function selectDataset(dataset = null) {
   store.selectedDataset = dataset;
   store.files = caches.files[dataset];
   store.tables = caches.tables[dataset];
+  store.summaries = caches.summaries[dataset];
 }
 
 /**
@@ -374,7 +390,7 @@ function fillSummary(path, summary, files, coverageTypes) {
   if (pathType(path, files) === "file") {
     summary[path] = Object.fromEntries(coverageTypes.map(x => [x, { hits: 0, total: 0 }]));
     for (const [type, record] of Object.entries(files[path].records)) {
-      const [hits, total] = record.stats;
+      const [hits, total] = record.stats();
       summary[path][type].hits += hits;
       summary[path][type].total += total;
     }
