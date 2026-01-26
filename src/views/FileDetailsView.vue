@@ -143,21 +143,21 @@ onMounted(async () => {
     const rangeMatch = lineParam.match(/(\d+)-(\d+)/);
     const start = rangeMatch ? Number(rangeMatch[1]) : Number(lineParam);
     const end = rangeMatch ? Number(rangeMatch[2]) : null;
-    
+
     selectedLineStart.value = start;
-    
+
     // Scroll chunk marker into view to trigger virtual scrolling
     const targetChunk = Math.ceil(start / chunkSize);
     const chunkMarker = document.getElementById(String(targetChunk));
-    
+
     if (chunkMarker) {
       chunkMarker.scrollIntoView({ behavior: 'instant', block: 'start' });
     }
-    
+
     // Wait for virtual scrolling to render, then highlight
     setTimeout(() => {
       clearHighlight();
-      
+
       const lineEl = document.querySelector(`#L${start}`);
       if (lineEl) {
         lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -166,7 +166,7 @@ onMounted(async () => {
           tr.classList.add('highlighted-line');
           setDecreasingZIndex(start, tr);
         }
-        
+
         if (end) {
           for (let i = start + 1; i <= end; i++) {
             const tr = document.querySelector(`#L${i}`)?.closest('tr.line-row');
