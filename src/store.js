@@ -214,7 +214,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
   store.metadata = config;
   store.hasSources = !!sourcesFile;
   selectDataset();
-  store.dataLoaded = true
+  store.dataLoaded = true;
 
 
   console.timeEnd("File loading");
@@ -229,6 +229,8 @@ export function unloadData() {
   store.metadata = Object.create(null);
   store.loadedFromFile = false;
   store.hiddenCoverageTypes = Object.create(null);
+  store.tests = new Set();
+  store.dataLoaded = false;
 }
 
 /**
