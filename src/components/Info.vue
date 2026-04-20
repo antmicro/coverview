@@ -73,7 +73,7 @@ const toggleTables = () => {
 .info-section {
   position: sticky;
   top: 0;
-  z-index: 99999;
+  z-index: 999;
   background: var(--bg-primary);
   padding: 3rem 0rem 2rem;
   border-bottom: 1px solid var(--border-primary);

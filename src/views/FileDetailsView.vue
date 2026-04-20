@@ -2,7 +2,9 @@
 import { useRoute, useRouter } from "vue-router";
 import { store, availableCoverageTypes } from '../store.js';
 import { computed, ref, onMounted } from 'vue';
-import TableView from "./TableView.vue";
+import { clearHighlight, highlightByNum, scrollChunkIntoView } from "../codeViewerUtils.js";
+import CodeSearchModel from '../CodeSearchModel.js';
+import CodeSearch from '../components/CodeSearch.vue';
 
 const props = defineProps({
   fileName: String,
@@ -22,7 +24,6 @@ const observer = new IntersectionObserver((entries) => {
   if (id && id !== visibleChunk.value) visibleChunk.value = id;
 });
 let lineCount = 0;
-
 const selectedLineStart = ref(0);
 
 if (!store.hasSources) {
@@ -76,6 +77,8 @@ const lines = computed(() => Array.from(Array(lineCount).keys())
       return lineData;
     }));
 
+const codeSearchModel = new CodeSearchModel(lines, chunkSize, visibleChunk);
+
 const toggleDetails = (line, type) => {
   line.showDetails.value = (line.showDetails.value === type) ? '' : type;
 }
@@ -83,13 +86,6 @@ const toggleDetails = (line, type) => {
 const toggleLineOrigins = (line, value) => {
   line.showOrigins.value = value;
 }
-
-const setDecreasingZIndex = (lineNumber, element) => {
-  const baseZIndex = 1000;
-  element.style.zIndex = baseZIndex - lineNumber;
-};
-
-const clearHighlight = () => document.querySelectorAll('.highlighted-line').forEach(el => el.classList.remove('highlighted-line'));
 
 const highlightLine = e => {
   if (e.shiftKey) e.preventDefault();
@@ -103,23 +99,13 @@ const highlightLine = e => {
 
     router.replace({ query: { ...route.query, L: `${start}-${end}` } });
 
-    for (let i = start; i <= end; i++) {
-      const el = document.querySelector(`#L${i}`);
-      if (el) {
-        const tr = el.closest('tr.line-row');
-        if (tr) {
-          tr.classList.add('highlighted-line');
-          setDecreasingZIndex(i, tr);
-        }
-      }
-    }
+    for (let i = start; i <= end; i++) highlightByNum(i);
   } else {
     clearHighlight();
     selectedLineStart.value = lineNumber;
     const tr = e.target.closest('tr.line-row');
     if (tr) {
       tr.classList.add('highlighted-line');
-      setDecreasingZIndex(lineNumber, tr);
     }
   }
 };
@@ -147,12 +133,7 @@ onMounted(async () => {
     selectedLineStart.value = start;
 
     // Scroll chunk marker into view to trigger virtual scrolling
-    const targetChunk = Math.ceil(start / chunkSize);
-    const chunkMarker = document.getElementById(String(targetChunk));
-
-    if (chunkMarker) {
-      chunkMarker.scrollIntoView({ behavior: 'instant', block: 'start' });
-    }
+    visibleChunk.value = scrollChunkIntoView(start, visibleChunk.value, chunkSize);
 
     // Wait for virtual scrolling to render, then highlight
     setTimeout(() => {
@@ -164,7 +145,6 @@ onMounted(async () => {
         const tr = lineEl.closest('tr.line-row');
         if (tr) {
           tr.classList.add('highlighted-line');
-          setDecreasingZIndex(start, tr);
         }
 
         if (end) {
@@ -172,7 +152,6 @@ onMounted(async () => {
             const tr = document.querySelector(`#L${i}`)?.closest('tr.line-row');
             if (tr) {
               tr.classList.add('highlighted-line');
-              setDecreasingZIndex(i, tr);
             }
           }
         }
@@ -181,8 +160,6 @@ onMounted(async () => {
   }
   for (const el of chunks) observer.observe(el);
 });
-
-const showTable = ref(false);
 </script>
 
 <template>
@@ -221,7 +198,10 @@ const showTable = ref(false);
           </td>
           <td style="color: #52525b"><span :class="`${line.color} padded`">:</span></td>
           <td class="break">
-            <span :class="`${line.color} padded`">{{ code ? line.code : "NO LINE SOURCE AVAILABLE" }}</span>
+            <span v-if="code" :class="`${line.color} padded`">
+                <span v-for="(token, i) in codeSearchModel.tokensInVisibleChunk.value[line.n - 1]" :key="i" :class="{ 'search-result': token.highlight === 'result', 'highlighted': token.highlight === 'selected'}">{{ line.code.slice(token.start, token.end) }}</span>
+            </span>
+            <span v-else>NO LINE SOURCE AVAILABLE</span>
           </td>
         </tr>
         <template v-if="line.showDetails.value !== ''">
@@ -252,6 +232,7 @@ const showTable = ref(false);
     </main>
     <div class="sticky-scrollbar"></div>
   </div>
+  <CodeSearch :codeSearchModel />
 </template>
 <style scoped>
 a.router-link-active {
@@ -429,10 +410,25 @@ tr {
 .line-row.highlighted-line {
   background-color: rgba(var(--accent-primary-rgb, 0, 120, 215), 0.15);
   filter: brightness(1.3);
-  border: 1px solid rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4);
+  box-shadow: inset 0 1px 0 0 rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4),
+              inset 0 -1px 0 0 rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4),
+              inset 1px 0 0 0 rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4),
+              inset -1px 0 0 0 rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4);
+}
+
+.search-result {
+    background: #00d0c99a;
+}
+
+.highlighted {
+  background: #00d0c9cc;
 }
 
 a.router-link-active {
   color: var(--text-muted);
+}
+
+.code {
+    display: flex;
 }
 </style>
