@@ -444,7 +444,7 @@ export function getRateColor(rate, muted=false, grayscale=false) {
 }
 
 export function getRate(hitsAndTotals) {
-  return (hitsAndTotals && hitsAndTotals.total > 0) ? parseFloat(((hitsAndTotals.hits/hitsAndTotals.total) * 100).toFixed(1)) : 'N/A';
+  return (hitsAndTotals && hitsAndTotals.total > 0) ? Math.floor((hitsAndTotals.hits/hitsAndTotals.total) * 1000) / 10 : 'N/A';
 }
 
 // takes a ReadableStream - a response.body or file.stream() - and decompresses it
