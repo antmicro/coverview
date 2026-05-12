@@ -423,7 +423,7 @@ export function getRateColor(rate, muted=false, grayscale=false) {
   let color = muted ? "#991b1b" : "#ef4444"; // red
   if (rate == 'N/A') {
     color = muted ? "#262626" : "#737373"; // neutral
-  } else if (rate >= 80) {
+  } else if (rate >= 80 || rate == '~100') {
     color = muted ? "#166534" : "#22c55e"; // green
   } else if (rate >= 60) {
     color = muted ? "#854d0e" : "#eab308"; // yellow
@@ -444,7 +444,9 @@ export function getRateColor(rate, muted=false, grayscale=false) {
 }
 
 export function getRate(hitsAndTotals) {
-  return (hitsAndTotals && hitsAndTotals.total > 0) ? Math.floor((hitsAndTotals.hits/hitsAndTotals.total) * 1000) / 10 : 'N/A';
+  if (!hitsAndTotals || hitsAndTotals.total <= 0) return 'N/A';
+  const ratio = hitsAndTotals.hits / hitsAndTotals.total;
+  return ratio < 0.9995 || ratio === 1 ? parseFloat((ratio * 100).toFixed(1)) : '~100';
 }
 
 // takes a ReadableStream - a response.body or file.stream() - and decompresses it
