@@ -57,6 +57,17 @@ const showFilePicker = Object.keys(originalFiles).length === 0;
 
 const dataLoaded = computed(() => store.dataLoaded)
 
+const hasArchive = computed(() => typeof embeddedZipArchive === 'string');
+
+async function downloadEmbeddedZipArchive() {
+  const url = URL.createObjectURL(await (await fetch(`data:application/zip;base64,${embeddedZipArchive}`)).blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'coverview-data.zip';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 async function onFileUpload(event) {
   const file = event.target.files[0];
   if (!file) {
@@ -144,6 +155,9 @@ const returnFromAllTables = () => {
           </span>
           <button class="header-button" v-if="dataLoaded" @click="store.showSearchWindow = true">
             <img src="../assets/search.svg">
+          </button>
+          <button class="header-button" v-if="hasArchive" @click="downloadEmbeddedZipArchive">
+            <img src="../assets/download.svg" alt="Download embedded zip archive">
           </button>
           <ConfigMenu v-if="dataLoaded"/>
         </div>
