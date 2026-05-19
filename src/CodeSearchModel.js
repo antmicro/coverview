@@ -54,6 +54,12 @@ export default class CodeSearchModel {
     return this.lines.value.slice(Math.max(0, (this.visibleChunk.value - 2) * this.chunkSize), this.chunkSize * (this.visibleChunk.value + 1)).map((line) => this.getTokens(line));
   }
 
+  getTokensForLine(indexInChunk, lineChunk) {
+    let arrIndex = indexInChunk + (lineChunk - this.visibleChunk.value) * this.chunkSize;
+    if (this.visibleChunk.value > 1) arrIndex += this.chunkSize;
+    return this.tokensInVisibleChunk.value[arrIndex];
+  }
+
   getTokens(line) {
     if (!line.code) return [{ start: 0, end: 0 }];
 
