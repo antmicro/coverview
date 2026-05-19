@@ -51,7 +51,7 @@ export default class CodeSearchModel {
   }
 
   getTokensInVisibleChunk() {
-    return this.lines.value.slice((this.visibleChunk.value - 1) * this.chunkSize, this.chunkSize * this.visibleChunk.value).map((line) => this.getTokens(line));
+    return this.lines.value.slice(Math.max(0, (this.visibleChunk.value - 2) * this.chunkSize), this.chunkSize * (this.visibleChunk.value + 1)).map((line) => this.getTokens(line));
   }
 
   getTokens(line) {
