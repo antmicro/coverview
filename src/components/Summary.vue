@@ -60,6 +60,7 @@ async function onInfoFileUpload(event) {
 <style scoped>
 .coverage-summary {
   width: 100%;
+  padding-top: 1rem;
 }
 
 .summary-table {
@@ -97,7 +98,7 @@ th.visibility > div {
     width: 100%;
     font-size: 0.875rem;
   }
-  
+
   th, td {
     font-size: 0.75rem;
   }

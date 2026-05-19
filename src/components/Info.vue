@@ -4,7 +4,7 @@ import DropdownSelect from "./DropdownSelect.vue";
 import { store, selectDataset, pathType, hasTableForFile } from "../store.js";
 import router from "../router/index.js";
 import { computed, ref } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, RouterLink } from "vue-router";
 
 const props = defineProps({
   timestamp: String,
@@ -20,6 +20,22 @@ function onDatasetChange(value) {
   router.replace({ query: query });
 }
 
+const breadcrumbParts = computed(() => {
+  const result = [];
+  if (!route.params.path) {
+    return result;
+  }
+
+  let accumulator = '';
+  for (const part of route.params.path.split('/')) {
+    result.push({
+      name: part,
+      target: `/${encodeURIComponent(accumulator + part)}`,
+    });
+    accumulator += `${part}/`;
+  }
+  return result;
+});
 const pathKind = computed(() => pathType(props.path));
 const hasTables = computed(() => hasTableForFile(props.path));
 const tableVisible = ref(
@@ -35,6 +51,15 @@ const toggleTables = () => {
 <template>
   <div class="info-section">
     <div class="info-header">
+      <ul class="breadcrumbs">
+        <li>
+          <RouterLink :to="{ path: '/', query: queryWithoutHighlight }" class="muted-link">{{ store.metadata.repo?.split("/").pop() || 'Overview' }}</RouterLink>
+        </li>
+        <li v-for="part in breadcrumbParts">
+          <img src="../assets/caret.svg" alt="caret" />
+          <RouterLink :to="{ path: part.target, query: queryWithoutHighlight }" class="muted-link">{{ part.name }}</RouterLink>
+        </li>
+      </ul>
       <div class="title-metadata">
         <div class="title-row">
           <DropdownSelect
@@ -75,16 +100,36 @@ const toggleTables = () => {
   top: 0;
   z-index: 999;
   background: var(--bg-primary);
-  padding: 3rem 0rem 2rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid var(--border-primary);
   display: flex;
 }
 
 .info-header {
-  width: 80%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+ul {
+  display: flex;
+  padding: 1rem 1rem 1rem 0rem;
+  list-style: none;
+  color: #A1A1AA;
+  gap: 0.375rem;
+  overflow-x: auto;
+  width: 100%;
+}
+
+li {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+li > img {
+  width: 1rem;
+  height: 1rem;
 }
 
 .title-row {
@@ -130,7 +175,6 @@ const toggleTables = () => {
 @media (max-width: 768px) {
   .info-section {
     flex-direction: column;
-    padding: 1.5rem 0.75rem 1rem;
   }
 
   .info-header {
@@ -144,10 +188,6 @@ const toggleTables = () => {
   .info-title {
     font-size: 1.5rem;
   }
-}
-
-.info-section {
-  padding: 1rem 0;
 }
 
 .title-metadata {

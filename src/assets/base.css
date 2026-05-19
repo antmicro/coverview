@@ -95,3 +95,15 @@ textarea {
 .green {
   background: rgb(22, 101, 52);
 }
+
+.muted-link {
+  white-space: nowrap;
+  color: #A1A1AA;
+  text-decoration: none;
+}
+
+.muted-link:hover {
+  color: #F4F4F5;
+  text-decoration: underline;
+  cursor: pointer;
+}

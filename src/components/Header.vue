@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import router from '../router/index.js';
 import { store, loadData, unloadData, decompress } from '../store.js';
 import { RouterLink, useRoute } from 'vue-router';
@@ -28,23 +28,6 @@ document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.key == 'k') {
     e.preventDefault();
   }
-});
-
-const breadcrumbParts = computed(() => {
-  const result = [];
-  if (!route.params.path) {
-    return result;
-  }
-
-  let accumulator = '';
-  for (const part of route.params.path.split('/')) {
-    result.push({
-      name: part,
-      target: `/${encodeURIComponent(accumulator + part)}`,
-    });
-    accumulator += `${part}/`;
-  }
-  return result;
 });
 
 // Filter out line/table highlight params when navigating
@@ -131,7 +114,7 @@ const returnFromAllTables = () => {
           <span class="info-item" v-if="Object.entries(store?.tables ?? {}).length > 0">
             <img src="../assets/table.svg" alt="All tables" />
             <RouterLink class="info-text" :to="{ path: '/tables', query: queryWithoutHighlight }" v-if="route.path !== '/tables'">Show all tables</RouterLink>
-            <a @click="returnFromAllTables" style="cursor: pointer;" v-else>Hide all tables</a>
+            <a @click="returnFromAllTables" class="muted-link" v-else>Hide all tables</a>
           </span>
           <span class="info-item date" v-if="date">
             <img src="../assets/date.svg" alt="Date icon" />
@@ -139,7 +122,7 @@ const returnFromAllTables = () => {
           </span>
           <span class="info-item repo" v-if="repo">
             <img src="../assets/repo.svg" alt="Repo icon" />
-            <a :href="repo" v-if="repo?.startsWith('https://') || repo?.startsWith('http://')">{{ repo?.split("/").pop() }}</a>
+            <a :href="repo" v-if="repo?.startsWith('https://') || repo?.startsWith('http://')" class="muted-link">{{ repo?.split("/").pop() }}</a>
             <span class="info-text branch" v-else>{{ repo?.split("/").pop() }}</span>
           </span>
           <span class="info-item branch" v-if="branch">
@@ -162,15 +145,6 @@ const returnFromAllTables = () => {
           <ConfigMenu v-if="dataLoaded"/>
         </div>
       </div>
-      <ul class="breadcrumbs">
-        <li>
-          <RouterLink :to="{ path: '/', query: queryWithoutHighlight }">{{ store.metadata.repo?.split("/").pop() || 'Overview' }}</RouterLink>
-        </li>
-        <li v-for="part in breadcrumbParts">
-          <img src="../assets/caret.svg" alt="caret" />
-          <RouterLink :to="{ path: part.target, query: queryWithoutHighlight }">{{ part.name }}</RouterLink>
-        </li>
-      </ul>
     </nav>
   </header>
   <SearchWindow v-if="store.showSearchWindow"/>
@@ -267,41 +241,6 @@ input[type="file"] {
     width: 1rem;
     height: 1rem;
   }
-}
-
-ul {
-  display: flex;
-  padding: 1rem;
-  list-style: none;
-  border-top: 1px solid #27272A;
-  color: #A1A1AA;
-  gap: 0.375rem;
-}
-
-li {
-  display: flex;
-  gap: 0.375rem;
-  align-items: center;
-}
-
-a {
-  white-space: nowrap;
-  color: #A1A1AA;
-  text-decoration: none;
-}
-
-a:hover {
-  color: #F4F4F5;
-  text-decoration: underline;
-}
-
-.last {
-  color: #F4F4F5;
-}
-
-li > img {
-  width: 1rem;
-  height: 1rem;
 }
 
 @media (max-width: 480px) {
