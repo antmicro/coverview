@@ -172,7 +172,7 @@ onMounted(async () => {
       <tbody>
     <template v-for="i in Math.ceil(lines.length / chunkSize)">
       <tr :ref="el => chunks[i-1] = el" :id="i" style="height: 1px;"></tr>
-      <template v-for="(line) in lines.slice(chunkSize * (i - 1), chunkSize * i)" :key="line.n">
+      <template v-for="(line, indexInChunk) in lines.slice(chunkSize * (i - 1), chunkSize * i)" :key="line.n">
       <template v-if="Math.abs(visibleChunk - i) <= 1">
       <tr class="line-row">
           <td>
@@ -199,7 +199,7 @@ onMounted(async () => {
           <td style="color: #52525b"><span :class="`${line.color} padded`">:</span></td>
           <td class="break">
             <span v-if="code" :class="`${line.color} padded`">
-                <span v-for="(token, i) in codeSearchModel.tokensInVisibleChunk.value[line.n - 1]" :key="i" :class="{ 'search-result': token.highlight === 'result', 'highlighted': token.highlight === 'selected'}">{{ line.code.slice(token.start, token.end) }}</span>
+                <span v-for="(token) in codeSearchModel.tokensInVisibleChunk.value[indexInChunk]" :key="i" :class="{ 'search-result': token.highlight === 'result', 'highlighted': token.highlight === 'selected'}">{{ line.code.slice(token.start, token.end) }}</span>
             </span>
             <span v-else>NO LINE SOURCE AVAILABLE</span>
           </td>

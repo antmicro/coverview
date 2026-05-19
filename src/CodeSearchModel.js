@@ -1,5 +1,5 @@
 import { clearHighlight, highlightByNum, scrollChunkIntoView } from "./codeViewerUtils";
-import { nextTick, ref } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 
 export default class CodeSearchModel {
   constructor(lines, chunkSize, visibleChunk) {
@@ -11,6 +11,7 @@ export default class CodeSearchModel {
     this.scrollRequestId = 0;
     this.currentResult = ref(-1);
     this.tokensInVisibleChunk = ref(this.getTokensInVisibleChunk());
+    watch(this.visibleChunk, () => this.tokensInVisibleChunk.value = this.getTokensInVisibleChunk());
   }
 
   async waitForLine(n) {
@@ -32,7 +33,7 @@ export default class CodeSearchModel {
     elem.scrollIntoView({ block: 'center' });
     highlightByNum(line);
   }
-  
+
   switchResult(result) {
     if (this.results.length === 0) return 0;
     this.currentResult.value = result;
@@ -48,7 +49,7 @@ export default class CodeSearchModel {
   prevResult() {
     return this.switchResult((this.currentResult.value - 1 + this.results.length) % this.results.length);
   }
-  
+
   getTokensInVisibleChunk() {
     return this.lines.value.slice((this.visibleChunk.value - 1) * this.chunkSize, this.chunkSize * this.visibleChunk.value).map((line) => this.getTokens(line));
   }
@@ -79,7 +80,7 @@ export default class CodeSearchModel {
     this.results = [];
     this.resultsByLine = new Map();
     this.currentResult.value = -1;
-    
+
     if (!query) {
       this.tokensInVisibleChunk.value = this.getTokensInVisibleChunk();
       return 0;
