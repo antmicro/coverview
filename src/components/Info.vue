@@ -94,7 +94,7 @@ const toggleTables = () => {
   </div>
 </template>
 
-<style>
+<style scoped>
 .info-section {
   position: sticky;
   top: 0;
