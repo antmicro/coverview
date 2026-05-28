@@ -81,40 +81,42 @@ export default class CodeSearchModel {
   }
 
   onSearch(query) {
-    this.scrollRequestId++;
-    clearHighlight();
-    this.results = [];
-    this.resultsByLine = new Map();
-    this.currentResult.value = -1;
+    return new Promise((resolve) => {
+      this.scrollRequestId++;
+      clearHighlight();
+      this.results = [];
+      this.resultsByLine = new Map();
+      this.currentResult.value = -1;
 
-    if (!query) {
-      this.tokensInVisibleChunk.value = this.getTokensInVisibleChunk();
-      return 0;
-    }
-
-    const lowerQuery = query.toLowerCase();
-
-    for (const line of this.lines.value) {
-      if (!line.code) continue;
-
-      const lowerCode = line.code.toLowerCase();
-      const matches = [];
-      let start = lowerCode.indexOf(lowerQuery);
-
-      while (start !== -1) {
-        const match = { start, end: start + query.length, resultIndex: this.results.length };
-        matches.push(match);
-        start = lowerCode.indexOf(lowerQuery, match.end);
-        this.results.push({ line: line.n });
+      if (!query) {
+        this.tokensInVisibleChunk.value = this.getTokensInVisibleChunk();
+        return resolve(0);
       }
-      if (matches.length > 0) this.resultsByLine.set(line.n, matches);
-    }
 
-    this.currentResult.value = this.results.length > 0 ? 0 : -1;
+      const lowerQuery = query.toLowerCase();
 
-    if (this.currentResult.value !== -1) this.goToCurrentResult();
-    this.tokensInVisibleChunk.value = this.getTokensInVisibleChunk();
+      for (const line of this.lines.value) {
+        if (!line.code) continue;
 
-    return this.results.length;
+        const lowerCode = line.code.toLowerCase();
+        const matches = [];
+        let start = lowerCode.indexOf(lowerQuery);
+
+        while (start !== -1) {
+          const match = { start, end: start + query.length, resultIndex: this.results.length };
+          matches.push(match);
+          start = lowerCode.indexOf(lowerQuery, match.end);
+          this.results.push({ line: line.n });
+        }
+        if (matches.length > 0) this.resultsByLine.set(line.n, matches);
+      }
+
+      this.currentResult.value = this.results.length > 0 ? 0 : -1;
+
+      if (this.currentResult.value !== -1) this.goToCurrentResult();
+      this.tokensInVisibleChunk.value = this.getTokensInVisibleChunk();
+
+      return resolve(this.results.length);
+    })
   }
 }

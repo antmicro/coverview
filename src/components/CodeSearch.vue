@@ -14,14 +14,20 @@ const searchQuery = ref('');
 const searchInput = ref(null);
 const resultCount = ref(0);
 const current = ref(0);
+const state = ref('');
 const searchDebounceMs = 300;
 let searchTimeout = null;
 
 const handleInput = () => {
+  state.value = 'waiting';
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
+    state.value = 'searching';
     current.value = 0;
-    resultCount.value = props.codeSearchModel.onSearch(searchQuery.value);
+    props.codeSearchModel.onSearch(searchQuery.value).then(count => {
+      resultCount.value = count;
+      state.value = '';
+    });
   }, searchDebounceMs);
 };
 
@@ -29,7 +35,8 @@ const clearSearch = () => {
   clearTimeout(searchTimeout);
   searchQuery.value = '';
   current.value = 0;
-  resultCount.value = props.codeSearchModel.onSearch('');
+  props.codeSearchModel.onSearch('');
+  resultCount.value = 0;
 };
 
 const handleKeyDown = (event) => {
@@ -84,7 +91,11 @@ onUnmounted(() => {
         class="search-input"
         @input="handleInput"
       />
-      <div class="counter"><p v-if="resultCount">{{ current + 1 }}/{{ resultCount }}</p></div>
+      <div class="counter">
+        <img v-if="state === 'searching'" class="spinner" src="../assets/searching.svg" alt="searching" />
+        <p v-else-if="resultCount">{{ current + 1 }}/{{ resultCount }}</p>
+        <img v-else-if="resultCount === 0 && searchQuery.length && state !== 'waiting'" src="../assets/not_found.svg" alt="no result" />
+      </div>
     </div>
   </div>
 </template>
@@ -131,5 +142,23 @@ onUnmounted(() => {
   font-size: 14px;
   background: transparent;
   width: 200px;
+}
+
+img {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+   transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 2s linear infinite;
 }
 </style>
