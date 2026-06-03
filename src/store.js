@@ -1,5 +1,5 @@
-import { reactive, computed, toRaw, ref } from 'vue'
-import { BlobReader, ZipReader, BlobWriter } from "@zip.js/zip.js";
+import { reactive, toRaw, ref } from 'vue'
+import { BlobReader, ZipReader, Uint8ArrayWriter } from "@zip.js/zip.js";
 import { XzReadableStream } from 'xz-decompress';
 import { Record, parseInfo, parseDesc, unifySourcePath, parseTable } from './parse';
 import router from './router/index.js'
@@ -463,8 +463,8 @@ export async function decompress(archive, extension="zip") {
 
   const files = {};
   for (const e of entries) {
-    const data = await e.getData(new BlobWriter());
-    files[e.filename] = await data.text();
+    const bytes = await e.getData(new Uint8ArrayWriter());
+    files[e.filename] = new TextDecoder().decode(bytes);
   }
   zipReader.close();
   return files;
