@@ -409,6 +409,7 @@ tr {
 
 .line-row.highlighted-line {
   background-color: rgba(var(--accent-primary-rgb, 0, 120, 215), 0.15);
+  z-index: 1;
   filter: brightness(1.3);
   box-shadow: inset 0 1px 0 0 rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4),
               inset 0 -1px 0 0 rgba(var(--accent-primary-rgb, 0, 120, 215), 0.4),
