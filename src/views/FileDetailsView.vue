@@ -209,7 +209,7 @@ onMounted(async () => {
             <td></td>
               <template v-for="type in coverageTypes" :key="`${line.n}-${type}-${gIndex}`">
                 <td v-if="line.showDetails.value === type">
-                  <div style="padding-left: 20px; display: flex">
+                  <div class="details-grid" style="grid-template-columns: repeat(2, min-content); padding-left: calc(20px - 0.3rem)">
                     <div v-for="datapoint in g.subGroups" :key="`${line.n}-${type}-${gIndex}-${datapoint.value}`" :title="[...datapoint.sources].join(' ')" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem">{{ datapoint.value }}</div>
                   </div>
                 </td>
