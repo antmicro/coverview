@@ -46,6 +46,16 @@ const testsAsTotal = computed({
   }
 })
 
+const showTotalHits = computed({
+  get() {
+    return route.query.showTotalHits == "true";
+  },
+  set(newValue) {
+    store.showTotalHits = newValue;
+    router.replace({ query: { ...route.query, showTotalHits: newValue }});
+  }
+})
+
 const warningThreshold = computed({
   get() {
     return route.query.warningThreshold || "";
@@ -96,6 +106,12 @@ watchEffect(() => {
       <input id="tests-as-total-checkbox" type="checkbox" v-model="testsAsTotal"/>
       <label for="tests-as-total-checkbox" class="switch"/>
       <label for="tests-as-total-checkbox" class="config-menu-label">Use total number of tests as total</label>
+    </div>
+    <hr class="config-menu-separator"/>
+    <div class="switch-container">
+      <input id="show-total-hits-checkbox" type="checkbox" v-model="showTotalHits"/>
+      <label for="show-total-hits-checkbox" class="switch"/>
+      <label for="show-total-hits-checkbox" class="config-menu-label">Display number of total hits</label>
     </div>
     <div v-if="!thresholdInputUntouched || (store.metadata.warning_threshold !== undefined)" class="warning_threshold_config">
       <hr class="config-menu-separator"/>

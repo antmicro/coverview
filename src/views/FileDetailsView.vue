@@ -67,7 +67,17 @@ const lines = computed(() => Array.from(Array(lineCount).keys())
           if (line) {
             hasGroups[type] = line.hasGroups;
             const [hits, total] = line.stats(store);
-            coverageData[type] = { hits, total };
+            let value = 0;
+            if (line.hasGroups) {
+              for (const group of Object.values(line.groups)) {
+                for (const x of Object.values(group.subGroups)) {
+                  value += x.value;
+                }
+              }
+            } else {
+              value = line.value;
+            }
+            coverageData[type] = { hits, total, value };
             hitOrigins = Array.from(line.sources);
           }
         }
@@ -185,7 +195,7 @@ onMounted(async () => {
                   <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
                   <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
               </span>
-              <span v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}
+              <span v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type]">{{ line.coverageData[type].hits }}/{{ line.coverageData[type].total }}{{ store.showTotalHits ? ` (${line.coverageData[type].value})` : ""}}
                   <div class="remarks" @mouseleave="toggleLineOrigins(line, false)">
                       <ul>
                           <li class="remark" v-if="!line.showOrigins.value" v-for="origin in line.hitOrigins.slice(0, originThreshold)">{{origin}}</li>

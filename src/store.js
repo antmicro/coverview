@@ -24,6 +24,7 @@ export const store = reactive({
   dataLoaded: false,
   loadedFromFile: false,
   testsAsTotal: false,
+  showTotalHits: ref(false),
   hiddenCoverageTypes: Object.create(null),
   selectedDataset: "",
   tests: new Set(),
