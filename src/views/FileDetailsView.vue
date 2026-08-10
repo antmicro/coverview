@@ -264,10 +264,6 @@ main {
   max-width: 100%;
 }
 
-th, td:not(:has(.padded)), .padded {
-  padding: 0rem 0.3rem;
-}
-
 @media (min-width: 1280px) {
   main {
     overflow: visible;
@@ -335,9 +331,14 @@ th {
   color: #A1A1AA;
 }
 
-th, td:not(:has(.padded)), .padded {
+th, .padded {
   white-space: pre-wrap;
   padding: 0rem 0.3rem;
+}
+
+td:not(:has(.padded)) {
+  white-space: pre-wrap;
+  padding: 0 0 0 0.3rem;
 }
 
 td {
