@@ -12,6 +12,10 @@ const props = defineProps({
 });
 
 const route = useRoute();
+const queryWithoutHighlight = computed(() => {
+  const { L, T, ...rest } = route.query;
+  return rest;
+});
 
 function onDatasetChange(value) {
   selectDataset(value);
