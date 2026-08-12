@@ -190,7 +190,7 @@ onMounted(async () => {
             <RouterLink :to="{ query: { ...route.query, L: line.n } }" @click="highlightLine">{{ line.n }}</RouterLink>
           </td>
           <td v-for="type in coverageTypes">
-            <span :class="`${line.color} padded`">
+            <span :class="`${getColor(line.coverageData[type] ? {[type]: line.coverageData[type]} : {}, store.metadata.warning_threshold)} padded`">
               <span style="padding-right: 5px; margin: auto 0; cursor: pointer; height: 18px; width: 18px; display: flex; align-items: center;" @click="toggleDetails(line, type)" v-if="line.coverageData[type] && !store.hiddenCoverageTypes[type] && line.hasGroups[type]">
                   <img class="icon" v-if="line.showDetails.value === type" src="../assets/minus.svg" alt="collapse"/>
                   <img class="icon" v-else src="../assets/plus.svg" alt="expand"/>
