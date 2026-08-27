@@ -12,7 +12,7 @@ const props = defineProps({
 
 /** @type {{value: File}} */
 const file = computed(() => store.files[props.fileName]);
-const coverageTypes = computed(() => availableCoverageTypes());
+const coverageTypes = computed(() => availableCoverageTypes().filter((type) => file.value.records[type]?.lines.some((line) => line)));
 const route = useRoute();
 const router = useRouter();
 const code = file.value.source?.split('\n');
