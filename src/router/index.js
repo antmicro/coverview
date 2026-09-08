@@ -1,11 +1,15 @@
 import { createRouter, createWebHashHistory } from "vue-router";
-import ListView from "../views/ListView.vue";
 import TreeView from "../views/TreeView.vue";
 import TestView from "../views/TestView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
 import PathView from "../views/PathView.vue";
 import TableView from "../views/TableView.vue";
-import { pathType, store, selectDataset } from '../store.js';
+import { pathType, store, selectDataset, selectInstance } from '../store.js';
+
+function applyQuerySelection(to) {
+  selectDataset(to.query.dataset);
+  selectInstance(typeof to.query.instance === 'string' ? to.query.instance : '');
+}
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -22,7 +26,7 @@ const router = createRouter({
       component: PathView,
       beforeEnter: async (to, _) => {
         await store.loaded;
-        selectDataset(to.query.dataset);
+        applyQuerySelection(to);
       }
     },
     {
@@ -31,7 +35,7 @@ const router = createRouter({
       props: true,
       beforeEnter: async (to, _) => {
         await store.loaded;
-        selectDataset(to.query.dataset);
+        applyQuerySelection(to);
         return pathType(to.params.path) ? true : { name: 'NotFoundView' };
       },
     },
@@ -53,7 +57,7 @@ const router = createRouter({
       component: TableView,
       beforeEnter: async (to, _) => {
         await store.loaded;
-        selectDataset(to.query.dataset);
+        applyQuerySelection(to);
       }
     }
   ],

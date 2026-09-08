@@ -1,6 +1,7 @@
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { store, availableCoverageTypes } from '../store.js';
+import { hitCountFor } from '../parse.js';
 import { computed, ref, onMounted } from 'vue';
 import { clearHighlight, highlightByNum, scrollChunkIntoView } from "../codeViewerUtils.js";
 import CodeSearchModel from '../CodeSearchModel.js';
@@ -61,18 +62,18 @@ const lines = computed(() => Array.from(Array(lineCount).keys())
       let hasGroups = Object.create(null);
       let hitOrigins = []; // this is a bit hacky, as we only have "line" inside the loop
       // we use hitOrigins as the tests which hit the line since "source" is confusing
+      const instance = store.selectedInstance;
       for (const [type, record] of Object.entries(file.value.records)) {
         if (!store.hiddenCoverageTypes[type]) {
           const line = record.lines[i + 1];
           if (line) {
-            hasGroups[type] = line.hasGroups;
             const [hits, total] = line.stats(store);
+            if (instance && total === 0) continue;
+            hasGroups[type] = line.hasGroups && (!instance || groupHasInstance(line, instance));
             let value = 0;
             if (line.hasGroups) {
               for (const group of Object.values(line.groups)) {
-                for (const x of Object.values(group.subGroups)) {
-                  value += x.value;
-                }
+                for (const x of Object.values(group.subGroups)) value += x.value;
               }
             } else {
               value = line.value;
@@ -92,6 +93,22 @@ const codeSearchModel = new CodeSearchModel(lines, chunkSize, visibleChunk);
 const toggleDetails = (line, type) => {
   line.showDetails.value = (line.showDetails.value === type) ? '' : type;
 }
+
+function groupHasInstance(line, instance) {
+  if (!line.groups) return false;
+  return Object.values(line.groups).some((group) => Object.values(group.subGroups).some((sub) => hitCountFor(sub, instance) !== null));
+}
+
+function subGroupsForInstance(group) {
+  if (!store.selectedInstance) return group.subGroups;
+  const filtered = Object.create(null);
+  for (const [name, sub] of Object.entries(group.subGroups)) {
+    if (hitCountFor(sub, store.selectedInstance) !== null) filtered[name] = sub;
+  }
+  return filtered;
+}
+
+const displayedHits = (sub) => hitCountFor(sub, store.selectedInstance) ?? sub.value;
 
 const toggleLineOrigins = (line, value) => {
   line.showOrigins.value = value;
@@ -220,7 +237,7 @@ onMounted(async () => {
               <template v-for="type in coverageTypes" :key="`${line.n}-${type}-${gIndex}`">
                 <td v-if="line.showDetails.value === type">
                   <div class="details-grid" style="grid-template-columns: repeat(2, min-content); padding-left: calc(20px - 0.3rem)">
-                    <div v-for="datapoint in g.subGroups" :key="`${line.n}-${type}-${gIndex}-${datapoint.value}`" :title="[...datapoint.sources].join(' ')" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem">{{ datapoint.value }}</div>
+                    <div v-for="(datapoint, name) in subGroupsForInstance(g)" :key="`${line.n}-${type}-${gIndex}-${name}`" :title="[...datapoint.sources].join(' ')" :class="`${displayedHits(datapoint) < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem">{{ displayedHits(datapoint) }}</div>
                   </div>
                 </td>
                 <td v-else></td>
@@ -228,7 +245,7 @@ onMounted(async () => {
             <td></td>
             <td class="break">
               <div class="details-grid">
-                <div v-for="(datapoint, info) in g.subGroups" :key="`${line.n}-info-${gIndex}-${info}`" :class="`${datapoint.value < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem">{{ info }}</div>
+                <div v-for="(datapoint, info) in subGroupsForInstance(g)" :key="`${line.n}-info-${gIndex}-${info}`" :class="`${displayedHits(datapoint) < 1 ? 'dimmed-red' : 'dimmed-green'} datapoint`" style="padding: 0rem 0.5rem">{{ info }}</div>
               </div>
             </td>
           </tr>

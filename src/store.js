@@ -1,12 +1,13 @@
 import { reactive, toRaw, ref } from 'vue'
 import { BlobReader, ZipReader, Uint8ArrayWriter } from "@zip.js/zip.js";
 import { XzReadableStream } from 'xz-decompress';
-import { Record, parseInfo, parseDesc, unifySourcePath, parseTable } from './parse';
+import { Record, parseInfo, parseDesc, unifySourcePath, parseTable, applyDatCoverage } from './parse';
 import router from './router/index.js'
+import initDatParser, { DatParser } from './dat_parser/dat_parser.js'
 
 /**
  * @typedef {{[coverageType: string]: Record}} Records
- * @typedef {{records: Records, source: string}} File
+ * @typedef {{records: Records, source: string, instances?: string[]}} File
  * @typedef {{[filepath: string]: File}} Files
  * @typedef {{[dataset: string]: Files}} AllFiles
  * @typedef {{[path: string]: { [type: string]: { hits: number, total: number } }}} CoverageSummary
@@ -27,6 +28,7 @@ export const store = reactive({
   showTotalHits: ref(false),
   hiddenCoverageTypes: Object.create(null),
   selectedDataset: "",
+  selectedInstance: "",
   tests: new Set(),
   hasSources: false,
   showSearchWindow: ref(false),
@@ -61,9 +63,9 @@ export function parse_warning_threshold(value) {
   }
 
 /**
- * @param {{[filepath: string]: string}} inputFiles
+ * @param {{[filepath: string]: string | Uint8Array}} inputFiles
  */
-export function loadData(inputFiles, fromUploadedFile = false) {
+export async function loadData(inputFiles, fromUploadedFile = false) {
   console.time("File loading");
 
   unloadData();
@@ -109,6 +111,8 @@ export function loadData(inputFiles, fromUploadedFile = false) {
   const allFiles = Object.create(null);
   /** @type {AllTables} */
   const allTables = Object.create(null);
+
+  const datFilesByDataset = collectDatFiles(config.datasets, inputFiles);
 
   for (const [dataset, layout] of Object.entries(config.datasets)) {
     for (let [coverageType, files] of Object.entries(layout)) {
@@ -174,6 +178,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     }
   }
 
+  await applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, new Set(Object.values(config.datasets).flatMap(d => Object.keys(d))));
 
   if (Object.values(allFiles).every(value => Object.keys(value).length === 0)) {
     alert(`No dataset found. Is this a valid Coverview archive?`);
@@ -186,7 +191,7 @@ export function loadData(inputFiles, fromUploadedFile = false) {
     const label = `Calculating summaries for dataset: ${dataset}`
     console.time(label);
     allSummaries[dataset] = Object.create(null);
-    fillSummary("", allSummaries[dataset], files, Object.keys(config.datasets[dataset]));
+    fillSummary("", allSummaries[dataset], files, datasetCoverageTypes(config.datasets[dataset]));
     console.timeEnd(label);
   }
 
@@ -225,13 +230,65 @@ export function loadData(inputFiles, fromUploadedFile = false) {
   store.metadata = config;
   store.hasSources = !!sourcesFile;
   selectDataset();
+  if (!fromUploadedFile) {
+    const instance = router.currentRoute.value.query.instance;
+    if (typeof instance === 'string' && instance) selectInstance(instance);
+  }
   store.dataLoaded = true;
 
   console.timeEnd("File loading");
 }
 
+/**
+ * Collect `.dat` files listed in the dataset layout, then assign leftover
+ * archive `.dat` files to a `verilator` dataset (or the only dataset).
+ *
+ * TODO)) Make sure that we only respect the config. Don't automatically assign the leftover .dat files to "verilator"
+ *
+ * @param {{[dataset: string]: {[type: string]: string | string[]}}} datasets
+ * @param {{[filepath: string]: unknown}} inputFiles
+ * @returns {{[dataset: string]: string[]}}
+ */
+function collectDatFiles(datasets, inputFiles) {
+  /** @type {{[dataset: string]: string[]}} */
+  const byDataset = Object.create(null);
+  const assigned = new Set();
+
+  for (const [dataset, layout] of Object.entries(datasets ?? {})) {
+    const listed = [];
+    for (const value of Object.values(layout ?? {})) {
+      const files = Array.isArray(value) ? value : [value];
+      for (const file of files) {
+        if (typeof file === 'string' && file.endsWith('.dat')) {
+          listed.push(file);
+          assigned.add(file);
+        }
+      }
+    }
+    if (listed.length > 0) {
+      byDataset[dataset] = listed;
+    }
+  }
+
+  const leftover = Object.keys(inputFiles).filter((name) => name.endsWith('.dat') && !assigned.has(name));
+  if (leftover.length > 0) {
+    const names = Object.keys(datasets ?? {});
+    const target = names.includes('verilator')
+      ? 'verilator'
+      : names.length === 1
+        ? names[0]
+        : null;
+    if (target) {
+      byDataset[target] = [...(byDataset[target] ?? []), ...leftover];
+    }
+  }
+
+  return byDataset;
+}
+
 export function unloadData() {
   store.selectedDataset = "";
+  store.selectedInstance = "";
   store.files = Object.create(null);
   store.tables = Object.create(null);
   store.summaries = Object.create(null);
@@ -262,7 +319,8 @@ export function loadAdditionalFile(type, name, content) {
     // Recalculate summaries for the current dataset as values may have changed
     const newSummary = Object.create(null);
     fillSummary("", newSummary, store.files, availableCoverageTypes());
-    store.summaries = (caches.summaries[store.selectedDataset] = newSummary);
+    caches.summaries[store.selectedDataset] = newSummary;
+    applySummariesForSelection();
   } else if (name.endsWith(".desc")) {
     store.tests = toRaw(store.tests).union(parseDesc(name, content, records));
   } else {
@@ -287,7 +345,45 @@ export function selectDataset(dataset = null) {
   store.selectedDataset = dataset;
   store.files = caches.files[dataset];
   store.tables = caches.tables[dataset];
-  store.summaries = caches.summaries[dataset];
+  if (store.selectedInstance && !instanceExists(store.selectedInstance)) store.selectedInstance = "";
+  applySummariesForSelection();
+}
+
+/**
+ * Restrict coverage totals to one design hierarchy, or `""` for the aggregate.
+ *
+ * @param {string?} instance
+ */
+export function selectInstance(instance) {
+  if (instance && !instanceExists(instance)) store.selectedInstance = "";
+  store.selectedInstance = instance;
+  applySummariesForSelection();
+}
+
+const instanceExists = (instance, files = store.files) => Object.values(files ?? {}).some((file) => file.instances?.includes(instance));
+
+function applySummariesForSelection() {
+  if (!store.selectedInstance) {
+    store.summaries = caches.summaries[store.selectedDataset];
+    return;
+  }
+
+  const summary = Object.create(null);
+  fillSummary("", summary, store.files, availableCoverageTypes());
+  store.summaries = summary;
+}
+
+export function availableInstances(path = "") {
+  const instances = new Set();
+  for (const [filePath, file] of Object.entries(store.files ?? {})) {
+    if (path && filePath !== path && !filePath.startsWith(`${path}/`)) {
+      continue;
+    }
+    for (const instance of file.instances ?? []) {
+      instances.add(instance);
+    }
+  }
+  return Array.from(instances).sort();
 }
 
 /**
@@ -391,7 +487,7 @@ function fillSummary(path, summary, files, coverageTypes) {
   if (pathType(path, files) === "file") {
     summary[path] = Object.fromEntries(coverageTypes.map(x => [x, { hits: 0, total: 0 }]));
     for (const [type, record] of Object.entries(files[path].records)) {
-      const [hits, total] = record.stats();
+      const [hits, total] = record.stats(store);
       summary[path][type].hits += hits;
       summary[path][type].total += total;
     }
@@ -415,9 +511,55 @@ function fillSummary(path, summary, files, coverageTypes) {
 
 export function availableCoverageTypes() {
   if (store.metadata?.datasets && store.metadata.datasets[store.selectedDataset]) {
-    return Object.keys(store.metadata.datasets[store.selectedDataset]);
+    return datasetCoverageTypes(store.metadata.datasets[store.selectedDataset]);
   }
   return []; // No coverage types available
+}
+
+const datasetCoverageTypes = (layout) => Object.keys(layout ?? {}).filter((key) => key !== 'dat');
+
+/**
+ * @param {{[filepath: string]: string | Uint8Array}} inputFiles
+ * @param {AllFiles} allFiles
+ * @param {{[path: string]: string}} sources
+ * @param {{[dataset: string]: string[]}} datFilesByDataset
+ */
+async function applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, allowedCoverageTypes) {
+  const datasetsWithDat = Object.entries(datFilesByDataset).filter(([, files]) => files.length > 0);
+  if (datasetsWithDat.length === 0) return;
+
+  if (DatParser.disabled) return;
+  try {
+    await initDatParser();
+  } catch (error) {
+    console.error('Failed to initialize DAT parser; instance data will be unavailable.', error);
+    return;
+  }
+
+  for (const [dataset, datFiles] of datasetsWithDat) {
+    if (!(dataset in allFiles)) allFiles[dataset] = Object.create(null);
+
+    const label = `Loading .dat files for dataset: ${dataset}`;
+    console.time(label);
+    const parser = new DatParser();
+    for (const datFile of datFiles) {
+      if (!(datFile in inputFiles)) {
+        console.error(`File does not exist: ${datFile}`);
+        continue;
+      }
+      const fileLabel = `Loading .dat file: ${datFile}`;
+      console.time(fileLabel);
+      const content = inputFiles[datFile];
+      if (content instanceof Uint8Array) parser.parseBytes(datFile, content);
+      else parser.parse(datFile, content);
+      console.timeEnd(fileLabel);
+    }
+
+    const exported = parser.export();
+    parser.free();
+    applyDatCoverage(exported, allFiles[dataset], sources, allowedCoverageTypes);
+    console.timeEnd(label);
+  }
 }
 
 export function getRateColor(rate, muted=false, grayscale=false) {
@@ -464,8 +606,9 @@ export async function decompress(archive, extension="zip") {
 
   const files = {};
   for (const e of entries) {
+    if (e.directory) continue;
     const bytes = await e.getData(new Uint8ArrayWriter());
-    files[e.filename] = new TextDecoder().decode(bytes);
+    files[e.filename] = e.filename.endsWith('.dat') ? bytes : new TextDecoder().decode(bytes);
   }
   zipReader.close();
   return files;

@@ -15,7 +15,7 @@ async function load() {
   if (Object.keys(store.files).length > 0) return;
 
   if (Object.keys(originalFiles).length > 0) {
-    loadData(originalFiles);
+    await loadData(originalFiles);
     return;
   }
 
@@ -23,7 +23,7 @@ async function load() {
     const blob = await fetch(`data:application/zip;base64,${embeddedZipArchive}`).then(res => res.body);
     const unzipped = await decompress(blob);
     originalFiles = unzipped;
-    loadData(originalFiles);
+    await loadData(originalFiles);
     return;
   }
 
@@ -38,7 +38,7 @@ async function load() {
     const fetchedFiles = await fetch(url).then(res => res.body);
     const unzipped = await decompress(fetchedFiles, ext);
     originalFiles = unzipped;
-    loadData(originalFiles);
+    await loadData(originalFiles);
     return;
   }
 }

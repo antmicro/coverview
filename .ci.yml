@@ -1,9 +1,9 @@
 variables:
   # Keep in sync with coverview-ci-files's ref
-  CI_FILES_REF: "043201d6"
+  CI_FILES_REF: "7d6a7c65"
 
 include:
   - project: coverview-ci-files
     file: test.yaml
     # Keep in sync with CI_FILES_REF
-    ref: "043201d6"
+    ref: "7d6a7c65"

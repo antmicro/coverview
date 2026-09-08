@@ -3,6 +3,8 @@ class SubGroup {
     this.value = 0;
     /** @type {Set<string>} */
     this.sources = new Set();
+    /** @type {{[instance: string]: number} | null} */
+    this.instances = null;
   }
 
   /**
@@ -32,11 +34,14 @@ class Group {
   }
 
   /** @type {[hits: number, total: number]} */
-  stats() {
+  stats(store = null) {
     let total = 0;
     let hits = 0;
+    const instance = store?.selectedInstance;
     for (const x of Object.values(this.subGroups)) {
-      hits += x.value > 0 ? 1 : 0;
+      const value = hitCountFor(x, instance);
+      if (value === null) continue;
+      hits += value > 0 ? 1 : 0;
       total += 1;
     }
     return [hits, total];
@@ -50,6 +55,8 @@ class Line {
     this.groups = null;
     /** @type {Set<string>} */
     this.sources = new Set();
+    /** @type {{[instance: string]: number} | null} */
+    this.instances = null;
   }
 
   /**
@@ -83,17 +90,20 @@ class Line {
   stats(store = null) {
     let hits = 0;
     let totals = 0;
+    const instance = store?.selectedInstance;
     if (this.hasGroups) {
       for (const group of Object.values(this.groups)) {
-        const [groupHits, groupTotals] = group.stats();
+        const [groupHits, groupTotals] = group.stats(store);
         hits += groupHits;
         totals += groupTotals;
       }
-    } else if (store && store.testsAsTotal && store.tests.size !== 0 && this.sources) {
+    } else if (!instance && store && store.testsAsTotal && store.tests.size !== 0 && this.sources) {
       hits = this.sources.size;
       totals = store.tests.size;
     } else {
-      hits = this.value > 0 ? 1 : 0;
+      const value = hitCountFor(this, instance);
+      if (value === null) return [0, 0];
+      hits = value > 0 ? 1 : 0;
       totals = 1;
     }
     return [hits, totals];
@@ -125,18 +135,33 @@ export class Record {
   }
 
   /** @type {[hits: number, total: number]} */
-  stats() {
+  stats(store = null) {
     let hits = 0;
     let total = 0;
     for (const line of this.lines) {
       if (!line) continue;
 
-      const [lineHits, lineTotal] = line.stats();
+      const [lineHits, lineTotal] = line.stats(store);
       hits += lineHits;
       total += lineTotal;
     }
     return [hits, total];
   }
+}
+
+/**
+ * Hits for a line or subgroup, optionally restricted to one hierarchy.
+ * `null` means this point does not belong to the selected instance.
+ *
+ * @param {{value?: number, instances?: {[hier: string]: number} | null}} obj
+ * @param {string?} instance
+ * @returns {number | null}
+ */
+export function hitCountFor(obj, instance) {
+  if (!obj) return 0;
+  if (!instance || !obj.instances) return obj.value ?? 0;
+  if (!Object.hasOwn(obj.instances, instance)) return null;
+  return obj.instances[instance];
 }
 
 /**
@@ -292,4 +317,121 @@ export function unifySourcePath(path) {
   }
 
   return unifiedComponents.join('/')
+}
+
+/**
+ * Match a DAT source path to a file already present in `.info` or `sources.txt`.
+ * DAT files keep the simulator checkout prefix (`/__w/.../design/...`) while
+ * Coverview stores the project-relative suffix (`design/...`).
+ *
+ * @param {string} datPath
+ * @param {Set<string>} knownPaths
+ * @returns {string}
+ */
+export function matchDatSourcePath(datPath, knownPaths, checkoutPrefix) {
+  const unified = unifySourcePath(datPath);
+  if (knownPaths.has(unified)) return unified;
+  if (checkoutPrefix && unified.startsWith(checkoutPrefix)) return unified.slice(checkoutPrefix.length);
+
+  let best = "";
+  for (const candidate of knownPaths) {
+      if (unified.endsWith(`/${candidate}`) && candidate.length > best.length) best = candidate;
+  }
+  return best || unified;
+}
+
+/**
+ * If any DAT path ends with a known source path, the leftover prefix is the
+ * simulator checkout root and can be stripped from every DAT file.
+ *
+ * @param {string[]} datPaths
+ * @param {Set<string>} knownPaths
+ * @returns {string}
+ */
+function inferDatCheckoutPrefix(datPaths, knownPaths) {
+  for (const datPath of datPaths) {
+    const unified = unifySourcePath(datPath);
+    for (const known of knownPaths) {
+      if (unified.endsWith(`/${known}`)) return unified.slice(0, unified.length - known.length);
+    }
+  }
+  return '';
+}
+
+function mergeInstanceHits(current, extra) {
+  if (!extra || Object.keys(extra).length === 0) return current ?? null;
+  const merged = current ? { ...current } : Object.create(null);
+  for (const [hier, hits] of Object.entries(extra)) merged[hier] = (merged[hier] ?? 0) + hits;
+  return merged;
+}
+
+/**
+ * @typedef {{hits?: number, instances?: {[hier: string]: number}, groups?: {[group: string]: {[name: string]: {hits?: number, instances?: {[hier: string]: number}}}}}} DatLineExport
+ */
+
+/**
+ * @param {Record} record
+ * @param {{lines?: {[line: string]: DatLineExport}}} datRecord
+ * @param {boolean} writeHits  When false, only attach instance maps.
+ */
+function applyDatRecord(record, datRecord, writeHits) {
+  for (const [lineNum, datLine] of Object.entries(datRecord?.lines ?? {})) {
+    const line = record.getLine(parseInt(lineNum), writeHits);
+    if (!line) continue;
+    if (writeHits && datLine.hits) line.add(datLine.hits);
+    line.instances = mergeInstanceHits(line.instances, datLine.instances);
+
+    for (const [groupName, group] of Object.entries(datLine.groups ?? {})) {
+      for (const [subName, sub] of Object.entries(group ?? {})) {
+        const dest = writeHits ? line.getGroup(groupName).getSubGroup(subName) : line.groups?.[groupName]?.subGroups?.[subName];
+        if (!dest) continue;
+        if (writeHits && sub.hits) dest.add(sub.hits);
+        dest.instances = mergeInstanceHits(dest.instances, sub.instances);
+      }
+    }
+  }
+}
+
+/**
+ * Build a JS `Record` from the WASM DAT export for one coverage type.
+ *
+ * @param {string} sourceFile
+ * @param {{lines: {[line: string]: DatLineExport}}} datRecord
+ * @returns {Record}
+ */
+export function recordFromDat(sourceFile, datRecord) {
+  const record = new Record(sourceFile);
+  applyDatRecord(record, datRecord, true);
+  return record;
+}
+
+const mergeInstanceLists = (current, extra) => Array.from(new Set([...(current || []), ...(extra || [])]));
+
+/**
+ * @param {{[path: string]: {instances?: string[], records?: {[type: string]: {lines: {[line: string]: DatLineExport}}}}}} datFiles
+ * @param {{[path: string]: {records: {[type: string]: Record}, source?: string, instances?: string[]}}} datasetFiles
+ * @param {{[path: string]: string}} sources
+ */
+export function applyDatCoverage(datFiles, datasetFiles, sources, allowedCoverageTypes) {
+  if (!datFiles) return;
+
+  const knownPaths = new Set([...Object.keys(datasetFiles), ...Object.keys(sources)]);
+  const checkoutPrefix = inferDatCheckoutPrefix(Object.keys(datFiles), knownPaths);
+
+  for (const [datPath, fileData] of Object.entries(datFiles)) {
+    const filename = matchDatSourcePath(datPath, knownPaths, checkoutPrefix);
+    if (!(filename in datasetFiles)) {
+      datasetFiles[filename] = { records: Object.create(null), source: sources[filename] };
+    }
+
+    const dest = datasetFiles[filename];
+    dest.instances = mergeInstanceLists(dest.instances, fileData.instances);
+
+    for (const [coverageType, datRecord] of Object.entries(fileData.records ?? {})) {
+      if (!allowedCoverageTypes.has(coverageType)) continue;
+      const existing = dest.records[coverageType];
+      if (!existing || !existing?.lines?.some((line) => !!line)) dest.records[coverageType] = recordFromDat(filename, datRecord);
+      else applyDatRecord(existing, datRecord, false);
+    }
+  }
 }

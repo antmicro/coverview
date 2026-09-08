@@ -1,10 +1,12 @@
 <script setup>
 import Summary from "../components/Summary.vue";
 import DropdownSelect from "./DropdownSelect.vue";
-import { store, selectDataset, pathType, hasTableForFile } from "../store.js";
+import { store, selectDataset, selectInstance, availableInstances, pathType, hasTableForFile } from "../store.js";
 import router from "../router/index.js";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
+
+const ALL_INSTANCES_OPTION = "All instances";
 
 const props = defineProps({
   timestamp: String,
@@ -17,11 +19,39 @@ const queryWithoutHighlight = computed(() => {
   return rest;
 });
 
-function onDatasetChange(value) {
-  selectDataset(value);
+const instanceOptions = computed(() => [ALL_INSTANCES_OPTION, ...availableInstances(props.path ?? "")]);
+
+watch(
+  () => props.path,
+  () => {
+    if (store.selectedInstance && !instanceOptions.value.includes(store.selectedInstance)) onInstanceChange(ALL_INSTANCES_OPTION);
+  },
+  { immediate: true }
+);
+
+const showInstanceSelect = computed(() => availableInstances().length > 0);
+
+const selectedInstanceOption = computed({
+  get: () => store.selectedInstance || ALL_INSTANCES_OPTION,
+  set: (value) => onInstanceChange(value),
+});
+
+function replaceSelectionQuery() {
   const query = Object.assign({}, route.query);
   query.dataset = store.selectedDataset;
-  router.replace({ query: query });
+  if (store.selectedInstance) query.instance = store.selectedInstance;
+  else delete query.instance;
+  router.replace({ query });
+}
+
+function onDatasetChange(value) {
+  selectDataset(value);
+  replaceSelectionQuery();
+}
+
+function onInstanceChange(value) {
+  selectInstance(value === ALL_INSTANCES_OPTION ? "" : value);
+  replaceSelectionQuery();
 }
 
 const breadcrumbParts = computed(() => {
@@ -66,13 +96,22 @@ const toggleTables = () => {
       </ul>
       <div class="title-metadata">
         <div class="title-row">
-          <DropdownSelect
-            v-if="Object.keys(store?.metadata?.datasets ?? {}).length > 1"
-            v-model="store.selectedDataset"
-            :options="Object.keys(store.metadata.datasets)"
-            label="Select dataset"
-            @update:modelValue="onDatasetChange"
-          />
+          <div class="selectors">
+            <DropdownSelect
+              v-if="Object.keys(store?.metadata?.datasets ?? {}).length > 1"
+              v-model="store.selectedDataset"
+              :options="Object.keys(store.metadata.datasets)"
+              label="Select dataset"
+              @update:modelValue="onDatasetChange"
+            />
+            <DropdownSelect
+              v-if="showInstanceSelect"
+              v-model="selectedInstanceOption"
+              :options="instanceOptions"
+              label="Select instance"
+              wide
+            />
+          </div>
           <h1 class="info-title">
             <span>
               <img src="../assets/file.svg" v-if="pathKind === 'file'" />
@@ -140,6 +179,12 @@ li > img {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.selectors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .info-title {

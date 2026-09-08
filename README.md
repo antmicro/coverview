@@ -194,6 +194,25 @@ TEST:<line number>,<semicolon;separated;test;names>
 ```
 Each listed test will be presented in a tooltip for a given line coverage info.
 
+### `.dat` file support
+
+Coverview supports ingesting `.dat` files which come from Verilator-generated simulation.
+Including these files in the bundle is optional. Coverview infers instance data from them which allows for filtering coverage points based on the source instance.
+
+The `.dat` file parser is written in Rust and compiles to WASM. In order to compile Coverview with `.dat` file support one has to run:
+
+```sh
+npm run build:with-dat-parser
+```
+
+This assumes that `rustup` and `wasm-pack` are available and `wasm32-unknown-unknown` is added.
+Adding the WASM target can be done by running the following command:
+
+```sh
+rustup default stable
+rustup target add wasm32-unknown-unknown
+```
+
 ## info-process
 
 For additional processing of `info` files, e.g. merging of separate `info` datasets, path processing or generating the Coverview archive, please see the [info-process](https://github.com/antmicro/info-process) project on Antmicro's GitHub.

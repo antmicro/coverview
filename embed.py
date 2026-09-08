@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 
 index_filename = "dist/index.html"
 index_backup_filename = "dist/index.html.bak"

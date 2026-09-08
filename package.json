@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:vite": "vite build",
+    "build": "ln -sfn ../dat_parser/pkg_empty src/dat_parser && npm run build:vite",
+    "build:with-dat-parser": "wasm-pack build dat_parser --target web --out-dir pkg && ln -sfn ../dat_parser/pkg src/dat_parser && npm run build:vite",
     "preview": "vite preview"
   },
   "dependencies": {
