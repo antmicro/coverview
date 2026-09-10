@@ -50,7 +50,7 @@ mod wasm_api {
             ));
         }
 
-        #[wasm_bindgen(js_name = intoFiles)]
+        #[wasm_bindgen(js_name = export)]
         pub fn export(&self) -> Result<JsValue, JsValue> {
             let exported = self.db.export();
             let serializer = serde_wasm_bindgen::Serializer::new().serialize_maps_as_objects(true);
