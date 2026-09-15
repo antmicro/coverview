@@ -113,6 +113,7 @@ export async function loadData(inputFiles, fromUploadedFile = false) {
   const allTables = Object.create(null);
 
   const datFilesByDataset = collectDatFiles(config.datasets, inputFiles);
+  const preparsedDatByDataset = collectPreparsedDatFiles(config);
 
   for (const [dataset, layout] of Object.entries(config.datasets)) {
     for (let [coverageType, files] of Object.entries(layout)) {
@@ -178,7 +179,7 @@ export async function loadData(inputFiles, fromUploadedFile = false) {
     }
   }
 
-  await applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, new Set(Object.values(config.datasets).flatMap(d => Object.keys(d))));
+  await applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, preparsedDatByDataset, new Set(Object.values(config.datasets).flatMap(d => Object.keys(d))));
 
   if (Object.values(allFiles).every(value => Object.keys(value).length === 0)) {
     alert(`No dataset found. Is this a valid Coverview archive?`);
@@ -272,18 +273,25 @@ function collectDatFiles(datasets, inputFiles) {
 
   const leftover = Object.keys(inputFiles).filter((name) => name.endsWith('.dat') && !assigned.has(name));
   if (leftover.length > 0) {
-    const names = Object.keys(datasets ?? {});
-    const target = names.includes('verilator')
-      ? 'verilator'
-      : names.length === 1
-        ? names[0]
-        : null;
+    const target = pickFallbackDataset(datasets);
     if (target) {
       byDataset[target] = [...(byDataset[target] ?? []), ...leftover];
     }
   }
 
   return byDataset;
+}
+
+const pickFallbackDataset = (datasets) => {
+  const names = Object.keys(datasets ?? {});
+  return names.includes('verilator') ? 'verilator' : names.length === 1 ? names[0] : null;
+};
+
+/** Assign config.json's top-level `dat` (a `dat_parser` CLI export) to a dataset. */
+function collectPreparsedDatFiles(config) {
+  if (typeof config?.dat !== 'string') return Object.create(null);
+  const target = pickFallbackDataset(config.datasets);
+  return target ? { [target]: config.dat } : Object.create(null);
 }
 
 export function unloadData() {
@@ -523,9 +531,26 @@ const datasetCoverageTypes = (layout) => Object.keys(layout ?? {}).filter((key) 
  * @param {AllFiles} allFiles
  * @param {{[path: string]: string}} sources
  * @param {{[dataset: string]: string[]}} datFilesByDataset
+ * @param {{[dataset: string]: string}} preparsedDatByDataset
  */
-async function applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, allowedCoverageTypes) {
-  const datasetsWithDat = Object.entries(datFilesByDataset).filter(([, files]) => files.length > 0);
+async function applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, preparsedDatByDataset, allowedCoverageTypes) {
+  for (const [dataset, jsonFile] of Object.entries(preparsedDatByDataset)) {
+    if (!(jsonFile in inputFiles)) {
+      console.error(`File does not exist: ${jsonFile}`);
+      continue;
+    }
+    if (!(dataset in allFiles)) allFiles[dataset] = Object.create(null);
+
+    const label = `Loading pre-parsed .dat export for dataset: ${dataset}`;
+    console.time(label);
+    const exported = JSON.parse(inputFiles[jsonFile]);
+    applyDatCoverage(exported, allFiles[dataset], sources, allowedCoverageTypes);
+    console.timeEnd(label);
+  }
+
+  // Skip the WASM path for datasets already covered above.
+  const datasetsWithDat = Object.entries(datFilesByDataset)
+    .filter(([dataset, files]) => files.length > 0 && !(dataset in preparsedDatByDataset));
   if (datasetsWithDat.length === 0) return;
 
   if (DatParser.disabled) return;

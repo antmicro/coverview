@@ -213,6 +213,8 @@ rustup default stable
 rustup target add wasm32-unknown-unknown
 ```
 
+Alternatively, pre-parse `.dat` files ahead of time with the [dat_parser](dat_parser) CLI and reference the resulting JSON export via a top-level `"dat"` field in `config.json`, skipping the WASM build and in-browser parsing.
+
 ## info-process
 
 For additional processing of `info` files, e.g. merging of separate `info` datasets, path processing or generating the Coverview archive, please see the [info-process](https://github.com/antmicro/info-process) project on Antmicro's GitHub.
