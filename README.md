@@ -106,6 +106,7 @@ There are four main sources of data:
         "any_key": "corresponding_value",
         ...
     },
+    "dat": "opional_pre_parsed_dat_files.json"
   }
   ```
   All metadata elements will be displayed in the top bar of the page.
