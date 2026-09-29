@@ -1,12 +1,18 @@
 use clap::Parser;
 use dat_parser::{CoverageDb, parse_dat_bytes};
-use std::{fs::File, io::Read, path::PathBuf, process::exit};
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+    process::exit,
+};
+use walkdir::WalkDir;
 use zip::ZipArchive;
 
 #[derive(Parser)]
 struct Args {
-    /// Input file
-    #[arg(short = 'i', long = "input", value_name = "FILE")]
+    /// Input directory or zip file
+    #[arg(short = 'i', long = "input", value_name = "DIR|ZIP")]
     input: PathBuf,
 
     /// Output file
@@ -14,18 +20,45 @@ struct Args {
     output: PathBuf,
 }
 
-fn main() {
-    let args = Args::parse();
+fn parse_and_report(name: &Path, contents: &[u8], db: &mut CoverageDb) {
+    let stats = parse_dat_bytes(contents, db);
+    println!(
+        "Parsed {}: {} points, {} skipped",
+        name.display(),
+        stats.accepted,
+        stats.skipped
+    );
+}
 
-    let mut db = CoverageDb::default();
+fn load_dir(dir: &Path, db: &mut CoverageDb) {
+    for entry in WalkDir::new(dir).into_iter().filter_map(Result::ok) {
+        if !entry.file_type().is_file() {
+            continue;
+        }
 
-    let file = File::open(&args.input).unwrap_or_else(|e| {
-        eprintln!("Failed to read {}: {e}", args.input.display());
+        let path = entry.path();
+
+        if !path.extension().is_some_and(|ext| ext == "dat") {
+            continue;
+        }
+
+        let contents = std::fs::read(path).unwrap_or_else(|e| {
+            eprintln!("Failed to read {}: {e}", path.display());
+            exit(1);
+        });
+
+        parse_and_report(path, &contents, db);
+    }
+}
+
+fn load_zip(path: &Path, db: &mut CoverageDb) {
+    let file = File::open(path).unwrap_or_else(|e| {
+        eprintln!("Failed to read {}: {e}", path.display());
         exit(1);
     });
 
     let mut archive = ZipArchive::new(file).unwrap_or_else(|e| {
-        eprintln!("Failed to open zip {}: {e}", args.input.display());
+        eprintln!("Failed to open zip {}: {e}", path.display());
         exit(1);
     });
 
@@ -53,18 +86,22 @@ fn main() {
             exit(1);
         }
 
-        let stats = parse_dat_bytes(&contents, &mut db);
-        println!(
-            "Parsed {}: {} points, {} skipped",
-            name.to_str().unwrap(),
-            stats.accepted,
-            stats.skipped
-        );
+        parse_and_report(&name, &contents, db);
+    }
+}
+
+fn main() {
+    let args = Args::parse();
+
+    let mut db = CoverageDb::default();
+
+    if args.input.is_dir() {
+        load_dir(&args.input, &mut db);
+    } else {
+        load_zip(&args.input, &mut db);
     }
 
-    let exported = db.export();
-
-    let json = serde_json::to_string(&exported).unwrap_or_else(|e| {
+    let json = serde_json::to_string(&db.export()).unwrap_or_else(|e| {
         eprintln!("Failed to serialize coverage data: {e}");
         exit(1);
     });
