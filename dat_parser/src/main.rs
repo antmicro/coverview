@@ -17,31 +17,22 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let file = match File::open(&args.input) {
-        Ok(file) => file,
-        Err(e) => {
-            eprintln!("Failed to read {}: {e}", args.input.display());
-            exit(1);
-        }
-    };
+    let file = File::open(&args.input).unwrap_or_else(|e| {
+        eprintln!("Failed to read {}: {e}", args.input.display());
+        exit(1);
+    });
 
-    let mut archive = match ZipArchive::new(file) {
-        Ok(archive) => archive,
-        Err(e) => {
-            eprintln!("Failed to open zip {}: {e}", args.input.display());
-            exit(1);
-        }
-    };
+    let mut archive = ZipArchive::new(file).unwrap_or_else(|e| {
+        eprintln!("Failed to open zip {}: {e}", args.input.display());
+        exit(1);
+    });
 
     let mut db = CoverageDb::default();
     for i in 0..archive.len() {
-        let mut entry = match archive.by_index(i) {
-            Ok(entry) => entry,
-            Err(e) => {
-                eprintln!("Failed to read zip entry {i}: {e}");
-                exit(1);
-            }
-        };
+        let mut entry = archive.by_index(i).unwrap_or_else(|e| {
+            eprintln!("Failed to read zip entry {i}: {e}");
+            exit(1);
+        });
 
         if !entry.is_file() {
             continue;
@@ -72,13 +63,10 @@ fn main() {
 
     let exported = db.export();
 
-    let json = match serde_json::to_string(&exported) {
-        Ok(json) => json,
-        Err(e) => {
-            eprintln!("Failed to serialize coverage data: {e}");
-            exit(1);
-        }
-    };
+    let json = serde_json::to_string(&exported).unwrap_or_else(|e| {
+        eprintln!("Failed to serialize coverage data: {e}");
+        exit(1);
+    });
 
     if let Err(e) = std::fs::write(&args.output, json) {
         eprintln!("Failed to write {}: {e}", args.output.display());
