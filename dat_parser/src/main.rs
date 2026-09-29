@@ -17,6 +17,8 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
+    let mut db = CoverageDb::default();
+
     let file = File::open(&args.input).unwrap_or_else(|e| {
         eprintln!("Failed to read {}: {e}", args.input.display());
         exit(1);
@@ -27,7 +29,6 @@ fn main() {
         exit(1);
     });
 
-    let mut db = CoverageDb::default();
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).unwrap_or_else(|e| {
             eprintln!("Failed to read zip entry {i}: {e}");
@@ -37,12 +38,12 @@ fn main() {
         if !entry.is_file() {
             continue;
         }
+
         let Some(name) = entry.enclosed_name() else {
             continue;
         };
-        let is_dat_file = name.components().any(|c| c.as_os_str() == "dat_files")
-            && name.extension().is_some_and(|ext| ext == "dat");
-        if !is_dat_file {
+
+        if !name.extension().is_some_and(|ext| ext == "dat") {
             continue;
         }
 
