@@ -65,16 +65,90 @@ export function parse_warning_threshold(value) {
 /**
  * @param {{[filepath: string]: string | Uint8Array}} inputFiles
  */
+function selectFiles(inputFiles) {
+  const names = Object.keys(inputFiles);
+  const config = inputFiles["config.json"]
+    ? JSON.parse(inputFiles["config.json"])
+    : Object.create(null);
+  const hasConfig = Object.keys(config).length > 0;
+  if (
+    !hasConfig &&
+    names.some((n) => n.endsWith(".info")) &&
+    names.some((n) => n.endsWith(".dat"))
+  ) {
+    throw new Error("Both .info and .dat files provided.");
+  }
+  const selected = hasConfig
+    ? ["config.json"]
+    : names.filter((n) => /^[^/]*\.(info|desc|dat)$/.test(n));
+
+  if ("dat" in config) {
+    if (typeof config.dat !== "string") {
+      throw new Error(
+        `Value '${config.dat}' linked as 'dat' in config.json is not a string.`,
+      );
+    }
+
+    const beforeSelect = selected.length;
+
+    if (config.dat.endsWith(".json")) {
+      selected.push(config.dat);
+    } else {
+      selected.push(
+        ...names.filter(
+          (n) =>
+            n.startsWith(config.dat.replace(/\/$/, "") + "/") &&
+            n.endsWith(".dat"),
+        ),
+      );
+    }
+
+    if (beforeSelect === selected.length) {
+      throw new Error(
+        `'${config.dat}' linked as 'dat' in config.json is neither a .json file nor a directory with .dat files.`,
+      );
+    }
+  }
+
+  const datasetFiles = Object.values(config.datasets ?? {}).flatMap((d) =>
+    Object.values(d).flat(),
+  );
+  const allowed = "dat" in config ? [".desc"] : [".desc", ".info"];
+  const disallowed = datasetFiles.find(
+    (f) => !allowed.some((ext) => f.endsWith(ext)),
+  );
+  if (disallowed) {
+    throw new Error(
+      `Only ${allowed.join(" and ")} files are allowed in 'datasets' ${"dat" in config ? "when" : "without"} 'dat', found '${disallowed}' in config.json.`,
+    );
+  }
+
+  selected.push(...datasetFiles, "logo.svg", "sources.txt");
+  return Object.fromEntries(
+    selected.filter((n) => n in inputFiles).map((n) => [n, inputFiles[n]]),
+  );
+}
+
+
+/**
+ * @param {{[filepath: string]: string | Uint8Array}} inputFiles
+ */
 export async function loadData(inputFiles, fromUploadedFile = false) {
   console.time("File loading");
 
-  unloadData();
-
-  let config = {
-    datasets: {
-      dataset: { coverage: Object.keys(inputFiles).filter(x => x.endsWith('.info')) },
-    },
+  const datNoConfig = !inputFiles['config.json'] && Object.keys(inputFiles).some(x => x.endsWith('.dat'));
+  const otherExt = 'dat' in store.metadata ? '.info' : '.dat';
+  if (store.dataLoaded && !inputFiles['config.json'] && Object.keys(inputFiles).some(x => x.endsWith(otherExt))) {
+    throw new Error(`Cannot load ${otherExt} files: the loaded data comes from ${otherExt === '.dat' ? '.info' : '.dat'} files.`);
   }
+
+  unloadData();
+  inputFiles = selectFiles(inputFiles);
+
+  let config = datNoConfig
+    ? { datasets: { dataset: { line: [], branch: [], toggle: [], expr: [] } }, dat: '' }
+    : { datasets: { dataset: { coverage: Object.keys(inputFiles).filter(x => x.endsWith('.info')) } } };
+
   const configSrc = inputFiles['config.json'];
   if (configSrc) {
     config = JSON.parse(configSrc);
@@ -115,6 +189,8 @@ export async function loadData(inputFiles, fromUploadedFile = false) {
   const datFilesByDataset = collectDatFiles(config.datasets, inputFiles);
   const preparsedDatByDataset = collectPreparsedDatFiles(config);
 
+  await applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, preparsedDatByDataset, new Set(Object.values(config.datasets).flatMap(d => Object.keys(d))));
+
   for (const [dataset, layout] of Object.entries(config.datasets)) {
     for (let [coverageType, files] of Object.entries(layout)) {
       files = Array.isArray(files) ? files : [files];
@@ -138,6 +214,11 @@ export async function loadData(inputFiles, fromUploadedFile = false) {
 
       /** @type {{[filename: string]: Record}} */
       const records = Object.create(null);
+      for (const [filename, file] of Object.entries(allFiles[dataset] ?? {})) {
+        if (file.records[coverageType]) {
+          records[filename] = file.records[coverageType];
+        }
+      }
 
       for (const infoFile of infoFiles) {
         if (!(infoFile in inputFiles)) {
@@ -152,7 +233,7 @@ export async function loadData(inputFiles, fromUploadedFile = false) {
       }
 
       for (const descFile of descFiles) {
-        if (!descFile in infoFiles) {
+        if (!(descFile in inputFiles)) {
           console.error(`File does not exist: ${descFile}`);
           return;
         }
@@ -178,8 +259,6 @@ export async function loadData(inputFiles, fromUploadedFile = false) {
       }
     }
   }
-
-  await applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, preparsedDatByDataset, new Set(Object.values(config.datasets).flatMap(d => Object.keys(d))));
 
   if (Object.values(allFiles).every(value => Object.keys(value).length === 0)) {
     alert(`No dataset found. Is this a valid Coverview archive?`);
@@ -289,7 +368,7 @@ const pickFallbackDataset = (datasets) => {
 
 /** Assign config.json's top-level `dat` (a `dat_parser` CLI export) to a dataset. */
 function collectPreparsedDatFiles(config) {
-  if (typeof config?.dat !== 'string') return Object.create(null);
+  if (typeof config?.dat !== 'string' || !config.dat.endsWith('.json')) return Object.create(null);
   const target = pickFallbackDataset(config.datasets);
   return target ? { [target]: config.dat } : Object.create(null);
 }
@@ -322,6 +401,11 @@ export function loadAdditionalFile(type, name, content) {
     .filter(entry => entry[1]));
 
   if (name.endsWith(".info")) {
+    if ('dat' in store.metadata) {
+      console.error(`Cannot load '${name}': the loaded data already comes from .dat files.`);
+      return;
+    }
+
     parseInfo(name, content, records);
 
     // Recalculate summaries for the current dataset as values may have changed
@@ -553,7 +637,11 @@ async function applyDatFiles(inputFiles, allFiles, sources, datFilesByDataset, p
     .filter(([dataset, files]) => files.length > 0 && !(dataset in preparsedDatByDataset));
   if (datasetsWithDat.length === 0) return;
 
-  if (DatParser.disabled) return;
+  if (DatParser.disabled) {
+    console.error('.dat files found but this build has no DAT parser.');
+    return;
+  }
+
   try {
     await initDatParser();
   } catch (error) {

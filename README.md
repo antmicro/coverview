@@ -93,7 +93,7 @@ There are four main sources of data:
     "datasets": {
       "dataset_name1": {
         "line": [ "line-set1.info", "line-set1.desc" ],
-        "branch": "branch-set1.info"
+        "branch": [ "branch-set1.info" ]
       },
       "dataset_name2": {
         "line": [ "line-set2.info", "line-set2-additional.info", "line-set2.desc" ],
@@ -106,7 +106,7 @@ There are four main sources of data:
         "any_key": "corresponding_value",
         ...
     },
-    "dat": "opional_pre_parsed_dat_files.json"
+    "dat": "optional pre-parsed .json file or directory of .dat files"
   }
   ```
   All metadata elements will be displayed in the top bar of the page.
@@ -128,7 +128,6 @@ There are four main sources of data:
   You can use separate datasets to, e.g., indicate a different runtime, compilation options or used simulation environment.
 
   Each dataset can include a range of coverage types, and each type has at least one `info` file and optional `desc` files listed in an array.
-  If you only provide a single `info` file, you can omit the array square brackets.
 
 * `logo.svg` - an optional logo file to put on top of the dashboard
 
@@ -214,7 +213,12 @@ rustup default stable
 rustup target add wasm32-unknown-unknown
 ```
 
-Alternatively, pre-parse `.dat` files ahead of time with the [dat_parser](dat_parser) CLI and reference the resulting JSON export via a top-level `"dat"` field in `config.json`, skipping the WASM build and in-browser parsing.
+The top-level `"dat"` field in `config.json` can point to either:
+
+* a directory with `.dat` files (e.g. `"dat": "dat_files"`), which are parsed in the browser and require a build with the DAT parser, or
+* a `.json` file produced by pre-parsing the `.dat` files ahead of time with the [dat_parser](dat_parser) CLI, skiping the WASM build and in-browser parsing.
+
+When `"dat"` is set, `datasets` can only list `.desc` files and no `.info` files may be used.
 
 ## info-process
 
